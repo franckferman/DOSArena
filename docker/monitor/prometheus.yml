@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  # Node exporter on each target (if deployed)
+  - job_name: 'targets'
+    static_configs:
+      - targets:
+          - 'apache-vuln:9100'
+          - 'apache-protected:9100'
+          - 'nginx-protected:9100'
+          - 'mysql-vuln:9104'
+          - 'postgres-vuln:9187'
+        labels:
+          lab: 'dosarena'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

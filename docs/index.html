@@ -1,0 +1,2184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOSArena — The DoS/DDoS Training Platform</title>
+<meta name="description" content="The first dedicated DoS and DDoS training platform with live proof-of-impact scoring. 8 attack scenarios, 15 containers. Real flags when you really break things.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,200;0,400;0,700;0,900;1,900&family=Oswald:wght@200;400;700&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg:     #131311;
+  --bg2:    #1a1a18;
+  --panel:  #1f1f1c;
+  --card:   #242420;
+  --line:   #2a2a26;
+
+  --lime:   #c0392b;
+  --lime2:  #922b21;
+  --green:  #4ade80;
+  --red:    #ff2800;
+  --amber:  #ffaa00;
+  --white:  #f0ede6;
+  --off:    #8a8880;
+  --dim:    #3a3a36;
+
+  --D: 'Barlow Condensed', sans-serif;
+  --O: 'Oswald', sans-serif;
+  --M: 'JetBrains Mono', monospace;
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--D);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar { width:3px; background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--lime); }
+
+.wrap { max-width:1200px; margin:0 auto; padding:0 40px; }
+@media (max-width:600px) { .wrap { padding:0 20px; } }
+
+/* ── ANIMATIONS ── */
+@keyframes blink   { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+@keyframes ticker  { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+@keyframes pulse   { 0%,100%{opacity:1} 50%{opacity:.4} }
+@keyframes scan-down {
+  from { transform:translateY(-100vh); opacity:.6; }
+  to   { transform:translateY(100vh);  opacity:0; }
+}
+@keyframes number-in {
+  from { opacity:0; transform:translateY(24px) scaleY(1.3); }
+  to   { opacity:1; transform:none; }
+}
+
+.reveal {
+  opacity:0;
+  transform:translateY(20px);
+  transition:opacity .6s ease, transform .6s ease;
+}
+.reveal.in { opacity:1; transform:none; }
+
+/* ── SCAN LINE ── */
+.scanline {
+  position:fixed;
+  left:0;right:0;
+  height:1px;
+  background:linear-gradient(to right, transparent, rgba(192,57,43,.12), transparent);
+  pointer-events:none;
+  z-index:9000;
+  animation:scan-down 10s linear infinite;
+}
+
+/* ══════════════════════════════════════════════════
+   NAV
+══════════════════════════════════════════════════ */
+nav {
+  position:fixed; top:0; left:0; right:0; z-index:999;
+  background:rgba(19,19,17,.96);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+  height:56px;
+  display:flex; align-items:center;
+}
+
+.nav-in {
+  width:100%; max-width:1200px; margin:0 auto; padding:0 40px;
+  display:flex; align-items:center; gap:0;
+}
+
+.nav-logo {
+  display:flex; align-items:center; gap:0;
+  text-decoration:none;
+  margin-right:40px;
+}
+
+.logo-dos {
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:26px;
+  letter-spacing:-1px;
+  color:var(--lime);
+  line-height:1;
+}
+
+.logo-arena {
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:26px;
+  letter-spacing:-1px;
+  color:var(--white);
+  line-height:1;
+}
+
+.nav-sep {
+  width:1px; height:28px;
+  background:var(--line);
+  margin:0 24px;
+}
+
+.nav-links {
+  display:flex; gap:0; list-style:none;
+}
+
+.nav-links a {
+  font-family:var(--O);
+  font-size:12px;
+  font-weight:400;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--off);
+  text-decoration:none;
+  padding:0 18px;
+  height:56px;
+  display:flex; align-items:center;
+  border-right:1px solid var(--line);
+  transition:color .15s, background .15s;
+}
+.nav-links a:first-child { border-left:1px solid var(--line); }
+.nav-links a:hover { color:var(--white); background:rgba(192,57,43,.04); }
+
+.nav-right { margin-left:auto; display:flex; align-items:center; gap:12px; }
+
+.nav-badge {
+  font-family:var(--M);
+  font-size:9px;
+  letter-spacing:2px;
+  color:var(--lime);
+  border:1px solid rgba(192,57,43,.3);
+  padding:4px 10px;
+  animation:pulse 3s ease-in-out infinite;
+}
+
+.btn-enter {
+  background:var(--lime);
+  color:var(--bg);
+  font-family:var(--O);
+  font-weight:700;
+  font-size:12px;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  padding:0 24px;
+  height:36px;
+  display:flex; align-items:center;
+  text-decoration:none;
+  transition:background .15s, transform .1s;
+}
+.btn-enter:hover { background:#d4ff20; transform:scale(1.02); }
+
+/* ══════════════════════════════════════════════════
+   HERO
+══════════════════════════════════════════════════ */
+#hero {
+  min-height:100vh;
+  padding-top:56px;
+  display:grid;
+  grid-template-rows:1fr auto;
+  position:relative;
+  overflow:hidden;
+}
+
+/* Diagonal grid background */
+.hero-grid {
+  position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(192,57,43,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(192,57,43,.025) 1px, transparent 1px);
+  background-size:60px 60px;
+  pointer-events:none;
+}
+
+.hero-grid::after {
+  content:'';
+  position:absolute; inset:0;
+  background:radial-gradient(ellipse at 60% 50%, transparent 30%, var(--bg) 75%);
+}
+
+/* Giant number backdrop */
+.hero-backdrop {
+  position:absolute;
+  top:50%; left:50%;
+  transform:translate(-50%, -52%);
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:clamp(200px, 30vw, 400px);
+  color:transparent;
+  -webkit-text-stroke:1px rgba(192,57,43,.05);
+  pointer-events:none;
+  user-select:none;
+  white-space:nowrap;
+  letter-spacing:-20px;
+  line-height:1;
+}
+
+.hero-content {
+  display:grid;
+  grid-template-columns:1fr 420px;
+  gap:0;
+  position:relative; z-index:1;
+  align-items:center;
+  padding:80px 40px;
+  max-width:1200px;
+  margin:0 auto;
+  width:100%;
+}
+
+/* Classification label */
+.hero-class {
+  display:flex; align-items:center; gap:12px;
+  margin-bottom:28px;
+}
+
+.class-dot {
+  width:8px;height:8px;
+  background:var(--lime);
+  border-radius:50%;
+  box-shadow:0 0 8px var(--lime);
+  animation:pulse 2s ease-in-out infinite;
+}
+
+.class-text {
+  font-family:var(--M);
+  font-size:10px;
+  letter-spacing:4px;
+  color:var(--lime);
+  text-transform:uppercase;
+}
+
+/* THE title */
+.hero-title {
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:clamp(80px, 11vw, 156px);
+  line-height:.88;
+  letter-spacing:-4px;
+  color:var(--white);
+  margin-bottom:16px;
+}
+
+.hero-title .dos {
+  color:var(--lime);
+  display:block;
+  text-shadow:0 0 40px rgba(192,57,43,.3);
+}
+
+.hero-title .arena {
+  color:var(--white);
+  display:block;
+}
+
+.hero-tagline {
+  font-family:var(--O);
+  font-weight:200;
+  font-size:clamp(16px,2vw,22px);
+  letter-spacing:3px;
+  text-transform:uppercase;
+  color:var(--off);
+  margin-bottom:40px;
+}
+
+.hero-desc {
+  font-family:var(--D);
+  font-weight:300;
+  font-size:18px;
+  line-height:1.65;
+  color:var(--off);
+  max-width:480px;
+  margin-bottom:48px;
+}
+
+.hero-desc strong { color:var(--white); font-weight:700; }
+.hero-desc .lime  { color:var(--lime); font-weight:700; }
+
+/* Hero CTA */
+.hero-cta {
+  display:flex; gap:12px; flex-wrap:wrap;
+  margin-bottom:56px;
+}
+
+.cta-primary {
+  background:var(--lime);
+  color:var(--bg);
+  font-family:var(--O);
+  font-weight:700;
+  font-size:13px;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  padding:16px 36px;
+  text-decoration:none;
+  display:inline-block;
+  transition:all .15s;
+}
+.cta-primary:hover { background:#d4ff20; transform:translateY(-2px); box-shadow:0 8px 24px rgba(192,57,43,.25); }
+
+.cta-secondary {
+  border:1px solid var(--line);
+  color:var(--off);
+  font-family:var(--O);
+  font-weight:400;
+  font-size:13px;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  padding:15px 28px;
+  text-decoration:none;
+  display:inline-block;
+  transition:all .15s;
+}
+.cta-secondary:hover { border-color:var(--white); color:var(--white); }
+
+/* Hero stat board */
+.hero-scoreboard {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1px;
+  background:var(--line);
+  border:1px solid var(--line);
+  max-width:440px;
+}
+
+.hs-cell {
+  background:var(--card);
+  padding:20px 24px;
+  transition:background .15s;
+}
+.hs-cell:hover { background:var(--panel); }
+
+.hs-val {
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:48px;
+  color:var(--lime);
+  line-height:1;
+  display:block;
+  text-shadow:0 0 20px rgba(192,57,43,.3);
+}
+
+.hs-label {
+  font-family:var(--O);
+  font-size:10px;
+  font-weight:400;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  color:var(--off);
+  margin-top:4px;
+}
+
+/* Hero right panel — live score feed */
+.hero-panel {
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-left:3px solid var(--lime);
+  height:fit-content;
+  position:relative;
+  overflow:hidden;
+}
+
+.hp-header {
+  background:var(--card);
+  padding:12px 20px;
+  border-bottom:1px solid var(--line);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.hp-title {
+  font-family:var(--O);
+  font-size:10px;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  color:var(--off);
+}
+
+.hp-live {
+  font-family:var(--M);
+  font-size:9px;
+  letter-spacing:2px;
+  color:var(--lime);
+  display:flex; align-items:center; gap:6px;
+}
+
+.hp-live::before {
+  content:'';
+  width:6px;height:6px;
+  background:var(--lime);
+  border-radius:50%;
+  animation:pulse 1.5s ease-in-out infinite;
+}
+
+.score-feed {
+  padding:16px 20px;
+  font-family:var(--M);
+  font-size:12px;
+  line-height:2;
+}
+
+.sf-row { display:flex; align-items:center; gap:12px; }
+.sf-time { color:var(--dim); font-size:10px; width:54px; flex-shrink:0; }
+.sf-player { color:var(--off); flex:1; }
+.sf-event  { color:var(--white); flex:2; }
+.sf-pts    { color:var(--lime); font-weight:500; text-align:right; white-space:nowrap; }
+.sf-pts.red{ color:var(--red); }
+
+/* Hero bottom — speed ticker */
+.hero-ticker {
+  grid-column:1/-1;
+  background:var(--lime);
+  height:36px;
+  overflow:hidden;
+  display:flex; align-items:center;
+  position:relative; z-index:1;
+}
+
+.ht-track {
+  display:flex;
+  white-space:nowrap;
+  animation:ticker 50s linear infinite;
+}
+
+.ht-item {
+  font-family:var(--O);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  color:rgba(19,19,17,.65);
+  padding:0 32px;
+}
+.ht-item.active { color:var(--bg); }
+.ht-item::before { content:'//  '; opacity:.4; }
+
+/* ══════════════════════════════════════════════════
+   SECTION GENERIC
+══════════════════════════════════════════════════ */
+.s-label {
+  font-family:var(--M);
+  font-size:9px;
+  letter-spacing:5px;
+  text-transform:uppercase;
+  color:var(--lime);
+  margin-bottom:12px;
+  display:flex; align-items:center; gap:10px;
+}
+.s-label::before { content:''; width:20px; height:1px; background:var(--lime); }
+
+.s-title {
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:clamp(40px,5.5vw,80px);
+  letter-spacing:-2px;
+  line-height:.92;
+  color:var(--white);
+  margin-bottom:56px;
+}
+.s-title .lime { color:var(--lime); }
+.s-title .dim  { color:var(--dim); }
+
+/* ══════════════════════════════════════════════════
+   HOW IT WORKS — score progression
+══════════════════════════════════════════════════ */
+#how {
+  padding:100px 0;
+  background:var(--bg2);
+  border-top:1px solid var(--line);
+}
+
+.steps {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:0;
+  background:var(--line);
+  border:1px solid var(--line);
+  position:relative;
+}
+
+/* Connecting line between steps */
+.steps::before {
+  content:'';
+  position:absolute;
+  top:52px; left:12.5%;
+  width:75%; height:1px;
+  background:linear-gradient(to right, var(--lime), rgba(192,57,43,.2));
+  z-index:0;
+}
+
+.step {
+  background:var(--card);
+  padding:40px 28px;
+  position:relative; z-index:1;
+  transition:background .2s;
+}
+.step:hover { background:var(--panel); }
+
+.step-n {
+  width:40px;height:40px;
+  background:var(--bg);
+  border:1px solid var(--line);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--O);
+  font-weight:700;
+  font-size:14px;
+  color:var(--off);
+  margin-bottom:24px;
+  transition:all .2s;
+}
+.step:hover .step-n {
+  background:var(--lime);
+  color:var(--bg);
+  border-color:var(--lime);
+}
+
+.step-title {
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:26px;
+  letter-spacing:.5px;
+  color:var(--white);
+  margin-bottom:12px;
+  line-height:1.1;
+}
+
+.step-desc {
+  font-size:14px;
+  font-weight:300;
+  color:var(--off);
+  line-height:1.65;
+}
+
+.step-tag {
+  position:absolute;
+  top:16px; right:16px;
+  font-family:var(--M);
+  font-size:8px;
+  letter-spacing:3px;
+  color:var(--lime);
+  border:1px solid rgba(192,57,43,.2);
+  padding:2px 7px;
+}
+
+/* Key differentiator box */
+.diff-box {
+  margin-top:40px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1px;
+  background:var(--line);
+  border:1px solid var(--line);
+}
+
+.diff-side {
+  padding:32px 36px;
+  background:var(--card);
+}
+
+.diff-side.bad  { border-left:3px solid var(--red); }
+.diff-side.good { border-left:3px solid var(--green); }
+
+.diff-label {
+  font-family:var(--M);
+  font-size:9px;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  margin-bottom:16px;
+}
+.bad  .diff-label { color:var(--red); }
+.good .diff-label { color:var(--green); }
+
+.diff-text {
+  font-family:var(--D);
+  font-weight:700;
+  font-style:italic;
+  font-size:24px;
+  line-height:1.2;
+  color:var(--white);
+}
+.diff-sub {
+  font-size:14px;
+  font-weight:300;
+  color:var(--off);
+  margin-top:8px;
+  line-height:1.5;
+}
+
+/* ══════════════════════════════════════════════════
+   SCENARIOS — fighter card layout
+══════════════════════════════════════════════════ */
+#scenarios {
+  padding:100px 0;
+  background:var(--bg);
+  border-top:1px solid var(--line);
+}
+
+.scenarios-head {
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:end;
+  margin-bottom:48px;
+}
+
+.pts-total {
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:20px;
+  color:var(--off);
+  text-align:right;
+}
+.pts-total span {
+  display:block;
+  font-size:56px;
+  color:var(--lime);
+  line-height:1;
+  text-shadow:0 0 20px rgba(192,57,43,.25);
+}
+
+/* Scenario grid */
+.sc-grid {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:1px;
+  background:var(--line);
+  border:1px solid var(--line);
+}
+
+.sc {
+  background:var(--card);
+  padding:28px 24px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  transition:background .15s;
+  cursor:default;
+  position:relative;
+  overflow:hidden;
+}
+.sc:hover { background:var(--panel); }
+
+/* Difficulty accent top */
+.sc::before {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0;
+  height:3px;
+}
+.sc.easy::before   { background:var(--green); }
+.sc.medium::before { background:var(--amber); }
+.sc.hard::before   { background:var(--red); }
+
+.sc-id {
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:56px;
+  color:var(--line);
+  line-height:1;
+  transition:color .15s;
+}
+.sc:hover .sc-id { color:rgba(192,57,43,.15); }
+
+.sc-name {
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:20px;
+  letter-spacing:.3px;
+  color:var(--white);
+  line-height:1.1;
+}
+
+.sc-ip {
+  font-family:var(--M);
+  font-size:10px;
+  color:var(--dim);
+  letter-spacing:1px;
+}
+
+.sc-desc {
+  font-size:13px;
+  font-weight:300;
+  color:var(--off);
+  line-height:1.55;
+  flex:1;
+}
+
+.sc-footer {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-top:1px solid var(--line);
+  padding-top:12px;
+  margin-top:4px;
+}
+
+.sc-pts {
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:32px;
+  line-height:1;
+}
+.sc.easy .sc-pts   { color:var(--green); }
+.sc.medium .sc-pts { color:var(--amber); }
+.sc.hard .sc-pts   { color:var(--red); }
+
+.sc-diff {
+  font-family:var(--M);
+  font-size:9px;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  padding:3px 8px;
+  border:1px solid;
+}
+.sc.easy .sc-diff   { color:var(--green); border-color:rgba(74,222,128,.3); }
+.sc.medium .sc-diff { color:var(--amber); border-color:rgba(255,170,0,.3); }
+.sc.hard .sc-diff   { color:var(--red);   border-color:rgba(255,40,0,.3); }
+
+/* ══════════════════════════════════════════════════
+   TARGETS — data table
+══════════════════════════════════════════════════ */
+#targets {
+  padding:100px 0;
+  background:var(--bg2);
+  border-top:1px solid var(--line);
+}
+
+.targets-table {
+  width:100%;
+  border-collapse:collapse;
+  margin-top:0;
+}
+
+.targets-table thead tr {
+  background:var(--lime);
+}
+
+.targets-table thead th {
+  font-family:var(--O);
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  color:var(--bg);
+  padding:12px 20px;
+  text-align:left;
+}
+
+.targets-table tbody tr {
+  border-bottom:1px solid var(--line);
+  transition:background .1s;
+}
+.targets-table tbody tr:hover { background:var(--panel); }
+
+.targets-table td { padding:16px 20px; vertical-align:middle; }
+
+.t-status {
+  width:8px;height:8px;
+  border-radius:50%;
+  display:inline-block;
+  margin-right:8px;
+}
+.t-status.vuln { background:var(--red); box-shadow:0 0 6px var(--red); }
+.t-status.hard { background:var(--green); box-shadow:0 0 6px var(--green); }
+
+.t-ip {
+  font-family:var(--M);
+  font-size:12px;
+  color:var(--amber);
+}
+
+.t-host {
+  font-family:var(--D);
+  font-weight:700;
+  font-size:16px;
+  color:var(--white);
+}
+
+.t-service {
+  font-family:var(--M);
+  font-size:11px;
+  color:var(--off);
+}
+
+.t-vuln {
+  font-size:13px;
+  color:var(--off);
+  font-weight:300;
+}
+
+.t-tag {
+  font-family:var(--M);
+  font-size:9px;
+  letter-spacing:2px;
+  padding:2px 8px;
+  border:1px solid;
+  display:inline-block;
+  white-space:nowrap;
+}
+.t-tag.amp  { color:var(--amber); border-color:rgba(255,170,0,.3); }
+.t-tag.l4   { color:var(--white); border-color:rgba(240,237,230,.2); }
+.t-tag.l7   { color:var(--lime);  border-color:rgba(192,57,43,.3); }
+.t-tag.prot { color:var(--green); border-color:rgba(74,222,128,.2); background:rgba(74,222,128,.05); }
+
+/* ══════════════════════════════════════════════════
+   FLAG SYSTEM
+══════════════════════════════════════════════════ */
+#flags {
+  padding:100px 0;
+  background:var(--bg);
+  border-top:1px solid var(--line);
+}
+
+.flags-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:48px;
+  align-items:start;
+}
+
+.flag-console {
+  background:var(--card);
+  border:1px solid var(--line);
+  border-top:3px solid var(--lime);
+}
+
+.fc-bar {
+  background:var(--panel);
+  padding:10px 16px;
+  display:flex; align-items:center; gap:8px;
+  border-bottom:1px solid var(--line);
+}
+.fc-dot { width:9px;height:9px;border-radius:50%; }
+.fc-dot.r{background:#ff5f57}.fc-dot.y{background:#ffbd2e}.fc-dot.g{background:#28c840}
+.fc-title {
+  margin-left:6px;
+  font-family:var(--M);
+  font-size:10px;
+  color:var(--off);
+  letter-spacing:2px;
+}
+
+.fc-body {
+  padding:24px;
+  font-family:var(--M);
+  font-size:12px;
+  line-height:2;
+}
+
+.fl-t { color:var(--dim); }
+.fl-o { color:var(--off); }
+.fl-g { color:#4aaa44; }
+.fl-r { color:var(--red); }
+.fl-y { color:var(--amber); }
+.fl-w { color:var(--white); }
+.fl-flag { color:var(--lime); font-weight:500; }
+.fl-prompt { color:var(--lime); }
+.fl-cur::after { content:'█'; animation:blink 1s step-end infinite; color:var(--lime); }
+
+.flag-rules {
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  background:var(--line);
+  border:1px solid var(--line);
+}
+
+.fr {
+  background:var(--card);
+  padding:28px 32px;
+  border-bottom:1px solid var(--line);
+  transition:background .15s;
+}
+.fr:last-child { border-bottom:none; }
+.fr:hover { background:var(--panel); }
+
+.fr-num {
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:48px;
+  color:var(--line);
+  line-height:1;
+  margin-bottom:12px;
+  transition:color .2s;
+}
+.fr:hover .fr-num { color:rgba(192,57,43,.15); }
+
+.fr-title {
+  font-family:var(--D);
+  font-weight:700;
+  font-style:italic;
+  font-size:22px;
+  color:var(--white);
+  margin-bottom:6px;
+}
+
+.fr-desc {
+  font-size:14px;
+  font-weight:300;
+  color:var(--off);
+  line-height:1.6;
+}
+
+/* ══════════════════════════════════════════════════
+   AMPLIFICATION — big numbers
+══════════════════════════════════════════════════ */
+#amp {
+  padding:100px 0;
+  background:var(--bg2);
+  border-top:1px solid var(--line);
+}
+
+.amp-grid {
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:1px;
+  background:var(--line);
+  border:1px solid var(--line);
+}
+
+.amp-card {
+  background:var(--card);
+  padding:32px 24px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+  transition:background .15s;
+}
+.amp-card:hover { background:var(--panel); }
+
+.amp-card::after {
+  content:'';
+  position:absolute;
+  bottom:0; left:0; right:0;
+  height:2px;
+  background:var(--lime);
+  transform:scaleX(0);
+  transition:transform .25s;
+}
+.amp-card:hover::after { transform:scaleX(1); }
+
+.amp-n {
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:72px;
+  color:var(--lime);
+  line-height:1;
+  display:block;
+  text-shadow:0 0 30px rgba(192,57,43,.3);
+  margin-bottom:8px;
+}
+
+.amp-proto {
+  font-family:var(--O);
+  font-size:16px;
+  font-weight:700;
+  letter-spacing:2px;
+  color:var(--white);
+  text-transform:uppercase;
+  display:block;
+  margin-bottom:4px;
+}
+
+.amp-port {
+  font-family:var(--M);
+  font-size:10px;
+  color:var(--dim);
+  letter-spacing:1px;
+}
+
+/* ══════════════════════════════════════════════════
+   LEARN — writeup preview
+══════════════════════════════════════════════════ */
+#learn {
+  padding:100px 0;
+  background:var(--bg);
+  border-top:1px solid var(--line);
+}
+
+.learn-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:1px;
+  background:var(--line);
+  border:1px solid var(--line);
+}
+
+.learn-card {
+  background:var(--card);
+  padding:36px 32px;
+  position:relative;
+  transition:background .15s;
+}
+.learn-card:hover { background:var(--panel); }
+
+.lc-icon {
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:40px;
+  color:var(--lime);
+  line-height:1;
+  margin-bottom:20px;
+  display:block;
+}
+
+.lc-title {
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:24px;
+  color:var(--white);
+  margin-bottom:8px;
+}
+
+.lc-badge {
+  font-family:var(--M);
+  font-size:9px;
+  letter-spacing:3px;
+  color:var(--lime);
+  border:1px solid rgba(192,57,43,.25);
+  padding:2px 8px;
+  margin-bottom:16px;
+  display:inline-block;
+}
+
+.lc-desc {
+  font-size:14px;
+  font-weight:300;
+  color:var(--off);
+  line-height:1.65;
+}
+
+/* ══════════════════════════════════════════════════
+   CTA
+══════════════════════════════════════════════════ */
+#cta {
+  padding:140px 0;
+  background:var(--lime);
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+
+#cta::before {
+  content:'DOSARENA';
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-52%);
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:clamp(100px,18vw,240px);
+  color:rgba(19,19,17,.07);
+  white-space:nowrap;
+  letter-spacing:-12px;
+  pointer-events:none;
+}
+
+.cta-title {
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:clamp(56px,7vw,100px);
+  letter-spacing:-3px;
+  color:var(--bg);
+  line-height:.92;
+  margin-bottom:20px;
+  position:relative;
+}
+
+.cta-sub {
+  font-family:var(--O);
+  font-weight:200;
+  font-size:20px;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  color:rgba(19,19,17,.55);
+  margin-bottom:48px;
+  position:relative;
+}
+
+.btn-cta {
+  background:var(--bg);
+  color:var(--lime);
+  font-family:var(--O);
+  font-weight:700;
+  font-size:14px;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  padding:18px 52px;
+  text-decoration:none;
+  display:inline-block;
+  transition:all .15s;
+  position:relative;
+}
+.btn-cta:hover { background:#0a0a08; transform:translateY(-2px); box-shadow:0 12px 32px rgba(0,0,0,.4); }
+
+/* ══════════════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════════════ */
+footer {
+  background:var(--bg2);
+  padding:60px 0 32px;
+  border-top:1px solid var(--line);
+}
+
+.footer-grid {
+  display:grid;
+  grid-template-columns:300px 1fr 1fr 1fr;
+  gap:48px;
+  padding-bottom:40px;
+  border-bottom:1px solid var(--line);
+}
+
+.f-logo {
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:36px;
+  line-height:1;
+  margin-bottom:12px;
+}
+.f-logo .d { color:var(--lime); }
+.f-logo .a { color:var(--white); }
+
+.f-tagline {
+  font-size:13px;
+  font-weight:300;
+  color:var(--off);
+  line-height:1.65;
+}
+
+.f-col-head {
+  font-family:var(--M);
+  font-size:9px;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  color:var(--off);
+  margin-bottom:20px;
+  border-bottom:1px solid var(--line);
+  padding-bottom:10px;
+}
+
+.f-list { list-style:none; }
+.f-list li { margin-bottom:10px; }
+.f-list a {
+  font-size:14px;
+  font-weight:300;
+  color:var(--off);
+  text-decoration:none;
+  transition:color .15s;
+}
+.f-list a:hover { color:var(--lime); }
+
+.footer-bottom {
+  padding-top:24px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.f-copy {
+  font-family:var(--M);
+  font-size:11px;
+  color:var(--dim);
+  letter-spacing:1px;
+}
+
+.f-legal {
+  font-family:var(--M);
+  font-size:10px;
+  color:var(--dim);
+  text-align:right;
+  line-height:1.7;
+}
+
+/* ══════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════ */
+
+/* Hamburger button */
+.nav-hamburger {
+  display:none;
+  flex-direction:column;
+  gap:5px;
+  cursor:pointer;
+  padding:4px;
+  margin-left:auto;
+}
+.nav-hamburger span {
+  display:block;
+  width:22px; height:2px;
+  background:var(--white);
+  transition:all .2s;
+}
+.nav-hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.nav-hamburger.open span:nth-child(2){opacity:0}
+.nav-hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* ── TABLET (≤ 1024px) ── */
+@media (max-width:1024px) {
+  .wrap { padding:0 24px; }
+
+  /* Hero: stack vertically */
+  #hero { grid-template-columns:1fr; }
+  .hero-content { grid-template-columns:1fr; padding:80px 24px 48px; }
+  .hero-panel { display:none; } /* hide terminal panel on tablet */
+  .hero-title { font-size:clamp(64px,12vw,120px); }
+  .hero-scoreboard { grid-template-columns:repeat(4,1fr); max-width:100%; }
+
+  /* Steps: 2 columns */
+  .steps { grid-template-columns:1fr 1fr; }
+  .steps::before { display:none; }
+
+  /* Scenarios: 2 columns */
+  .sc-grid { grid-template-columns:repeat(2,1fr); }
+
+  /* Architecture: 2 columns */
+  .arch-grid { grid-template-columns:1fr 1fr; }
+
+  /* Amplification: 3 columns */
+  .amp-grid { grid-template-columns:repeat(3,1fr); }
+
+  /* Learn: 1 column */
+  .learn-grid { grid-template-columns:1fr; }
+
+  /* Footer: 2 columns */
+  .footer-grid { grid-template-columns:1fr 1fr; gap:32px; }
+}
+
+/* ── MOBILE (≤ 768px) ── */
+@media (max-width:768px) {
+  .wrap { padding:0 20px; }
+
+  /* Nav */
+  .nav-in { flex-wrap:wrap; position:relative; }
+  .nav-hamburger { display:flex; }
+  .nav-links {
+    display:none;
+    flex-direction:column;
+    width:100%;
+    background:var(--bg2);
+    border-top:1px solid var(--line);
+    position:absolute;
+    top:56px; left:0; right:0;
+    z-index:200;
+  }
+  .nav-links.open { display:flex; }
+  .nav-links a {
+    border-right:none;
+    border-bottom:1px solid var(--line);
+    padding:14px 24px;
+    height:auto;
+  }
+  .nav-links a:first-child { border-left:none; }
+  .nav-right { display:none; }
+
+  /* Hero */
+  #hero { min-height:auto; }
+  .hero-content { padding:72px 20px 40px; gap:32px; }
+  .hero-title { font-size:clamp(56px,18vw,96px); letter-spacing:-2px; }
+  .hero-tagline { font-size:14px; }
+  .hero-desc { font-size:16px; }
+  .hero-scoreboard { grid-template-columns:1fr 1fr; }
+  .hs-val { font-size:36px; }
+  .hero-backdrop { font-size:clamp(120px,40vw,200px); }
+
+  /* Ticker */
+  .ht-item { padding:0 20px; }
+
+  /* Sections */
+  #how, #scenarios, #targets, #flags, #amp, #learn, #cta { padding:72px 0; }
+
+  /* Steps: 1 column */
+  .steps { grid-template-columns:1fr; }
+  .diff-box { grid-template-columns:1fr; }
+
+  /* Scenarios: 1 column */
+  .sc-grid { grid-template-columns:1fr; }
+  .scenarios-head { grid-template-columns:1fr; gap:16px; }
+  .pts-total { text-align:left; }
+  .pts-total span { font-size:40px; }
+
+  /* Targets table: horizontal scroll */
+  .targets-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .targets-table { min-width:600px; }
+
+  /* Flags */
+  .flags-grid { grid-template-columns:1fr; }
+
+  /* Amp: 2 columns */
+  .amp-grid { grid-template-columns:1fr 1fr; }
+
+  /* Learn */
+  .learn-grid { grid-template-columns:1fr; }
+
+  /* CTA */
+  .cta-title { font-size:clamp(40px,12vw,64px); }
+  .cta-sub { font-size:16px; letter-spacing:2px; }
+
+  /* Footer */
+  .footer-grid { grid-template-columns:1fr; gap:32px; }
+  .footer-bottom { flex-direction:column; gap:12px; align-items:flex-start; }
+  .f-legal { text-align:left; }
+
+  /* Architecture */
+  .arch-grid { grid-template-columns:1fr; }
+
+  /* Hero CTA buttons */
+  .hero-cta { flex-direction:column; }
+  .cta-primary, .cta-secondary { text-align:center; width:100%; }
+}
+
+/* ── SMALL MOBILE (≤ 420px) ── */
+@media (max-width:420px) {
+  .hero-title { font-size:clamp(48px,20vw,80px); letter-spacing:-1px; }
+  .hero-scoreboard { grid-template-columns:1fr 1fr; }
+  .hs-val { font-size:28px; }
+  .amp-grid { grid-template-columns:1fr; }
+  .s-title { font-size:clamp(32px,10vw,56px); }
+}
+
+/* ── DEPLOY SECTION ── */
+#deploy { padding:80px 0; }
+
+.deploy-tabs {
+  display:flex; gap:0; margin-bottom:32px;
+  border-bottom:1px solid var(--line);
+}
+
+.dt-tab {
+  font-family:var(--O);
+  font-size:11px;
+  font-weight:400;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  color:var(--off);
+  padding:10px 24px;
+  cursor:pointer;
+  border-bottom:2px solid transparent;
+  margin-bottom:-1px;
+  transition:color .15s, border-color .15s;
+}
+.dt-tab:hover { color:var(--white); }
+.dt-tab.active { color:var(--lime); border-bottom-color:var(--lime); }
+
+.deploy-panel { }
+.deploy-panel.hidden { display:none; }
+
+.deploy-req {
+  display:flex; flex-wrap:wrap; align-items:center; gap:8px;
+  margin-bottom:28px;
+  font-family:var(--M);
+  font-size:10px;
+  color:var(--off);
+  letter-spacing:1px;
+}
+.dr-sep { color:var(--dim); }
+
+.code-block {
+  background:var(--card);
+  border:1px solid var(--line);
+  margin-bottom:16px;
+}
+
+.cb-bar {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 14px;
+  border-bottom:1px solid var(--line);
+  background:var(--panel);
+}
+
+.cb-dots { display:flex; gap:5px; }
+.cb-dots span {
+  width:9px; height:9px; border-radius:50%;
+  background:var(--line2);
+}
+
+.cb-label {
+  font-family:var(--M);
+  font-size:9px;
+  letter-spacing:2px;
+  color:var(--dim);
+  flex:1;
+}
+
+.cb-copy {
+  font-family:var(--M);
+  font-size:9px;
+  letter-spacing:2px;
+  color:var(--off);
+  background:none;
+  border:1px solid var(--line);
+  padding:2px 10px;
+  cursor:pointer;
+  transition:color .15s, border-color .15s;
+  text-transform:uppercase;
+}
+.cb-copy:hover { color:var(--lime); border-color:var(--lime); }
+
+.cb-pre {
+  font-family:var(--M);
+  font-size:12px;
+  color:var(--white);
+  line-height:1.7;
+  padding:18px 20px;
+  margin:0;
+  white-space:pre;
+  overflow-x:auto;
+}
+.cb-pre .c { color:var(--dim); }
+
+.deploy-after {
+  display:flex; flex-wrap:wrap; gap:1px;
+  background:var(--line);
+  border:1px solid var(--line);
+  margin-top:24px;
+}
+
+.da-item {
+  display:flex; align-items:center; gap:16px;
+  background:var(--card);
+  padding:12px 20px;
+  flex:1; min-width:220px;
+}
+
+.da-label {
+  font-family:var(--O);
+  font-size:10px;
+  font-weight:400;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--off);
+  white-space:nowrap;
+  min-width:100px;
+}
+
+.da-cmd {
+  font-family:var(--M);
+  font-size:11px;
+  color:var(--lime);
+  letter-spacing:1px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-in">
+    <a href="#" class="nav-logo">
+      <span class="logo-dos">DOS</span><span class="logo-arena">Arena</span>
+    </a>
+    <div class="nav-sep"></div>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="#how">How It Works</a></li>
+      <li><a href="#scenarios">Scenarios</a></li>
+      <li><a href="#targets">Targets</a></li>
+      <li><a href="#flags">Flags</a></li>
+      <li><a href="#learn">Learn</a></li>
+      <li><a href="#deploy">Deploy</a></li>
+    </ul>
+    
+    <button class="nav-hamburger" id="ham" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-right" id="nav-right">
+      <span class="nav-badge">● ARENA ONLINE</span>
+      <a href="#cta" class="btn-enter">Enter Arena</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section id="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-backdrop" aria-hidden="true">DOS</div>
+
+  <div class="hero-content">
+    <div>
+      <div class="hero-class">
+        <div class="class-dot"></div>
+        <span class="class-text">DoS / DDoS Training Platform — Authorized Use Only</span>
+      </div>
+
+      <h1 class="hero-title">
+        <span class="dos">DOS</span>
+        <span class="arena">ARENA</span>
+      </h1>
+
+      <p class="hero-tagline">Flood. Prove. Score. Learn.</p>
+
+      <p class="hero-desc">
+        The <strong>first DoS/DDoS training platform</strong> with a
+        <span class="lime">live proof-of-impact scoring system</span>.
+        Flags are only issued when the judge confirms your service is actually down.
+        No file hunting. No guessing. Real impact or no points.
+      </p>
+
+      <div class="hero-cta">
+        <a href="#how" class="cta-primary">Start Training</a>
+        <a href="#scenarios" class="cta-secondary">View Scenarios</a>
+      </div>
+
+      <div class="hero-scoreboard">
+        <div class="hs-cell">
+          <span class="hs-val">19</span>
+          <div class="hs-label">Vulnerable targets</div>
+        </div>
+        <div class="hs-cell">
+          <span class="hs-val">8</span>
+          <div class="hs-label">Scenarios</div>
+        </div>
+        <div class="hs-cell">
+          <span class="hs-val">~650x</span>
+          <div class="hs-label">Max amplification</div>
+        </div>
+        <div class="hs-cell">
+          <span class="hs-val">1050</span>
+          <div class="hs-label">Total points</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live score feed -->
+    <div class="hero-panel">
+      <div class="hp-header">
+        <span class="hp-title">Live Score Feed</span>
+        <span class="hp-live">Live</span>
+      </div>
+      <div class="score-feed">
+        <div class="sf-row"><span class="sf-time">14:32:01</span><span class="sf-player">franckferman</span><span class="sf-event">solved SYN Flood</span><span class="sf-pts">+100</span></div>
+        <div class="sf-row"><span class="sf-time">14:31:44</span><span class="sf-player">Gilraen</span><span class="sf-event">DNS amp confirmed</span><span class="sf-pts">+100</span></div>
+        <div class="sf-row"><span class="sf-time">14:30:12</span><span class="sf-player">mafiaboy</span><span class="sf-event">MySQL starvation</span><span class="sf-pts">+150</span></div>
+        <div class="sf-row"><span class="sf-time">14:29:58</span><span class="sf-player">franckferman</span><span class="sf-event">hint 02 lvl 2</span><span class="sf-pts red">-25</span></div>
+        <div class="sf-row"><span class="sf-time">14:28:33</span><span class="sf-player">Gilraen</span><span class="sf-event">SNMP GetBulk confirmed</span><span class="sf-pts">+150</span></div>
+        <div class="sf-row"><span class="sf-time">14:27:01</span><span class="sf-player">Anna-senpai</span><span class="sf-event">Slow POST solved</span><span class="sf-pts">+200</span></div>
+        <div class="sf-row"><span class="sf-time">14:26:18</span><span class="sf-player">mafiaboy</span><span class="sf-event">NTP monlist proven</span><span class="sf-pts">+100</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-ticker">
+    <div class="ht-track">
+      <span class="ht-item active">SYN Flood</span>
+      <span class="ht-item">Slowloris</span>
+      <span class="ht-item">NTP ~550x</span>
+      <span class="ht-item active">SNMP ~650x</span>
+      <span class="ht-item">ACK Bypass</span>
+      <span class="ht-item">TCP Starvation</span>
+      <span class="ht-item">DNS ~60x</span>
+      <span class="ht-item active">Slow POST</span>
+      <span class="ht-item">IP Fragmentation</span>
+      <span class="ht-item">ICMP Flood</span>
+      <span class="ht-item active">Live Proof System</span>
+      <span class="ht-item">Progressive Hints</span>
+      <span class="ht-item">Full Writeups</span>
+      <span class="ht-item active">Docker + Terraform</span>
+      <!-- dupe -->
+      <span class="ht-item active">SYN Flood</span>
+      <span class="ht-item">Slowloris</span>
+      <span class="ht-item">NTP ~550x</span>
+      <span class="ht-item active">SNMP ~650x</span>
+      <span class="ht-item">ACK Bypass</span>
+      <span class="ht-item">TCP Starvation</span>
+      <span class="ht-item">DNS ~60x</span>
+      <span class="ht-item active">Slow POST</span>
+      <span class="ht-item">IP Fragmentation</span>
+      <span class="ht-item">ICMP Flood</span>
+      <span class="ht-item active">Live Proof System</span>
+      <span class="ht-item">Progressive Hints</span>
+      <span class="ht-item">Full Writeups</span>
+      <span class="ht-item active">Docker + Terraform</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section id="how">
+  <div class="wrap">
+    <div class="s-label">Methodology</div>
+    <h2 class="s-title">Not a CTF.<br><span class="lime">Proof of impact.</span></h2>
+
+    <div class="steps">
+      <div class="step reveal">
+        <span class="step-tag">01 / Recon</span>
+        <div class="step-n">01</div>
+        <div class="step-title">Read the Scenario</div>
+        <p class="step-desc">Each scenario targets one specific vulnerability class. Understand the mechanism. No hand-holding — the hint system is there if you need it.</p>
+      </div>
+      <div class="step reveal">
+        <span class="step-tag">02 / Attack</span>
+        <div class="step-n">02</div>
+        <div class="step-title">Launch Your Attack</div>
+        <p class="step-desc">Use Floodles, hping3, Scapy, or any tool. The arena does not care how you get there. Only whether the service degrades.</p>
+      </div>
+      <div class="step reveal">
+        <span class="step-tag">03 / Proof</span>
+        <div class="step-n">03</div>
+        <div class="step-title">Judge Confirms</div>
+        <p class="step-desc">The judge polls every target every 5 seconds. When it detects proven degradation matching the scenario criteria, a time-windowed flag is generated.</p>
+      </div>
+      <div class="step reveal">
+        <span class="step-tag">04 / Learn</span>
+        <div class="step-n">04</div>
+        <div class="step-title">Submit and Read</div>
+        <p class="step-desc">Submit your flag for points. Full technical writeup unlocks immediately — vulnerability mechanics, real-world context, detection, mitigation.</p>
+      </div>
+    </div>
+
+    <div class="diff-box reveal" style="margin-top:40px">
+      <div class="diff-side bad">
+        <div class="diff-label">Classic CTF</div>
+        <div class="diff-text">Find a file.<br>Get a string.<br>Submit.</div>
+        <p class="diff-sub">You can copy a flag without understanding what you did. The platform has no way to verify actual exploitation.</p>
+      </div>
+      <div class="diff-side good">
+        <div class="diff-label">DOSArena</div>
+        <div class="diff-text">Break a service.<br>Keep it broken.<br>Prove it.</div>
+        <p class="diff-sub">Flags expire every 5 minutes. Your attack must still be running when you submit. The judge is the ground truth.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SCENARIOS ── -->
+<section id="scenarios">
+  <div class="wrap">
+    <div class="scenarios-head">
+      <div>
+        <div class="s-label">Scenarios</div>
+        <h2 class="s-title" style="margin-bottom:0">8 challenges.<br><span class="dim">One goal: downtime.</span></h2>
+      </div>
+      <div class="pts-total">
+        Total available<span>1050</span>points
+      </div>
+    </div>
+
+    <div class="sc-grid reveal">
+      <div class="sc easy">
+        <div class="sc-id">01</div>
+        <div class="sc-name">SYN Flood</div>
+        <div class="sc-ip">10.0.2.20:80 — apache-vuln</div>
+        <p class="sc-desc">Exhaust the TCP SYN queue. SYN cookies disabled — backlog fills in seconds. Prove the server stops accepting connections.</p>
+        <div class="sc-footer"><span class="sc-pts">100</span><span class="sc-diff">Easy</span></div>
+      </div>
+      <div class="sc easy">
+        <div class="sc-id">02</div>
+        <div class="sc-name">Slowloris</div>
+        <div class="sc-ip">10.0.2.20:80 — apache-vuln</div>
+        <p class="sc-desc">Hold all 150 Apache workers with incomplete HTTP requests. Zero bandwidth. mod_reqtimeout not loaded on this target.</p>
+        <div class="sc-footer"><span class="sc-pts">100</span><span class="sc-diff">Easy</span></div>
+      </div>
+      <div class="sc medium">
+        <div class="sc-id">03</div>
+        <div class="sc-name">ACK Bypass</div>
+        <div class="sc-ip">10.0.2.50:80 — fw-stateless</div>
+        <p class="sc-desc">Prove ACK packets reach the server behind the stateless firewall. No conntrack, no session check — ACK floods pass through.</p>
+        <div class="sc-footer"><span class="sc-pts">150</span><span class="sc-diff">Medium</span></div>
+      </div>
+      <div class="sc easy">
+        <div class="sc-id">04</div>
+        <div class="sc-name">DNS Amp</div>
+        <div class="sc-ip">10.0.2.30:53 — dns-open</div>
+        <p class="sc-desc">Verify the BIND9 server is an open resolver responding to ANY queries from any source. Measure the amplification factor.</p>
+        <div class="sc-footer"><span class="sc-pts">100</span><span class="sc-diff">Easy</span></div>
+      </div>
+      <div class="sc easy">
+        <div class="sc-id">05</div>
+        <div class="sc-name">NTP Monlist</div>
+        <div class="sc-ip">10.0.2.31:123 — ntp-vuln</div>
+        <p class="sc-desc">Prove NTPd responds to mode 7 monlist. 8-byte request → 43,200 bytes response. ~550x amplification factor.</p>
+        <div class="sc-footer"><span class="sc-pts">100</span><span class="sc-diff">Easy</span></div>
+      </div>
+      <div class="sc medium">
+        <div class="sc-id">06</div>
+        <div class="sc-name">SNMP GetBulk</div>
+        <div class="sc-ip">10.0.2.32:161 — snmp-vuln</div>
+        <p class="sc-desc">Highest amplification in the arena. Community=public, full MIB-II. max-repetitions=255 dumps the entire device tree. ~650x.</p>
+        <div class="sc-footer"><span class="sc-pts">150</span><span class="sc-diff">Medium</span></div>
+      </div>
+      <div class="sc medium">
+        <div class="sc-id">07</div>
+        <div class="sc-name">TCP Starvation</div>
+        <div class="sc-ip">10.0.2.40:3306 — mysql-vuln</div>
+        <p class="sc-desc">Fill MySQL's connection table (max=50) with idle TCP connections. No auth needed. Prove the database refuses new connections.</p>
+        <div class="sc-footer"><span class="sc-pts">150</span><span class="sc-diff">Medium</span></div>
+      </div>
+      <div class="sc hard">
+        <div class="sc-id">08</div>
+        <div class="sc-name">Slow POST</div>
+        <div class="sc-ip">10.0.2.20:80 — apache-vuln</div>
+        <p class="sc-desc">RUDY attack. Declare 10MB Content-Length, send 1 byte/10s. Bypasses header timeouts. Fills workers via body channel.</p>
+        <div class="sc-footer"><span class="sc-pts">200</span><span class="sc-diff">Hard</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TARGETS ── -->
+<section id="targets">
+  <div class="wrap">
+    <div class="s-label">Lab Targets</div>
+    <h2 class="s-title">15 containers.<br><span class="lime">8 vulnerable by design.</span></h2>
+
+    <div class="targets-table-wrap"><table class="targets-table reveal">
+      <thead>
+        <tr>
+          <th></th>
+          <th>IP Address</th>
+          <th>Hostname</th>
+          <th>Service</th>
+          <th>Vulnerable To</th>
+          <th>Tag</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="t-status vuln"></span></td>
+          <td class="t-ip">10.0.2.20</td>
+          <td class="t-host">apache-vuln</td>
+          <td class="t-service">HTTP :80</td>
+          <td class="t-vuln">Slowloris, SYN flood, Slow POST, NUKE</td>
+          <td><span class="t-tag l7">L7</span></td>
+        </tr>
+        <tr>
+          <td><span class="t-status vuln"></span></td>
+          <td class="t-ip">10.0.2.30</td>
+          <td class="t-host">dns-open</td>
+          <td class="t-service">UDP :53</td>
+          <td class="t-vuln">DNS amplification (~60x)</td>
+          <td><span class="t-tag amp">AMP</span></td>
+        </tr>
+        <tr>
+          <td><span class="t-status vuln"></span></td>
+          <td class="t-ip">10.0.2.31</td>
+          <td class="t-host">ntp-vuln</td>
+          <td class="t-service">UDP :123</td>
+          <td class="t-vuln">NTP monlist (~550x)</td>
+          <td><span class="t-tag amp">AMP</span></td>
+        </tr>
+        <tr>
+          <td><span class="t-status vuln"></span></td>
+          <td class="t-ip">10.0.2.32</td>
+          <td class="t-host">snmp-vuln</td>
+          <td class="t-service">UDP :161</td>
+          <td class="t-vuln">SNMP GetBulk (~650x)</td>
+          <td><span class="t-tag amp">AMP</span></td>
+        </tr>
+        <tr>
+          <td><span class="t-status vuln"></span></td>
+          <td class="t-ip">10.0.2.40</td>
+          <td class="t-host">mysql-vuln</td>
+          <td class="t-service">TCP :3306</td>
+          <td class="t-vuln">TCP starvation (max_connections=50)</td>
+          <td><span class="t-tag l4">L4</span></td>
+        </tr>
+        <tr>
+          <td><span class="t-status vuln"></span></td>
+          <td class="t-ip">10.0.2.50</td>
+          <td class="t-host">fw-stateless</td>
+          <td class="t-service">HTTP :80</td>
+          <td class="t-vuln">ACK flood, XMAS flood (no conntrack)</td>
+          <td><span class="t-tag l4">L4</span></td>
+        </tr>
+        <tr>
+          <td><span class="t-status hard"></span></td>
+          <td class="t-ip">10.0.3.20</td>
+          <td class="t-host">apache-protected</td>
+          <td class="t-service">HTTP :80</td>
+          <td class="t-vuln">mod_reqtimeout + SYN cookies + iptables rate limit</td>
+          <td><span class="t-tag prot">Protected</span></td>
+        </tr>
+        <tr>
+          <td><span class="t-status hard"></span></td>
+          <td class="t-ip">10.0.3.21</td>
+          <td class="t-host">nginx-protected</td>
+          <td class="t-service">HTTP :80</td>
+          <td class="t-vuln">Event-driven + client_header_timeout + limit_req</td>
+          <td><span class="t-tag prot">Protected</span></td>
+        </tr>
+      </tbody>
+    </table></div>
+
+    <p style="margin-top:20px;font-family:var(--M);font-size:11px;color:var(--dim);letter-spacing:1px">
+      + postgres-vuln, fw-stateful, monitor, prometheus, grafana, judge, attacker (infrastructure)
+    </p>
+  </div>
+</section>
+
+<!-- ── FLAG SYSTEM ── -->
+<section id="flags">
+  <div class="wrap">
+    <div class="s-label">Flag System</div>
+    <h2 class="s-title">Flags prove<br><span class="lime">real downtime.</span></h2>
+
+    <div class="flags-grid">
+      <div class="flag-console reveal">
+        <div class="fc-bar">
+          <div class="fc-dot r"></div>
+          <div class="fc-dot y"></div>
+          <div class="fc-dot g"></div>
+          <span class="fc-title">judge — polling loop</span>
+        </div>
+        <div class="fc-body">
+          <div><span class="fl-t">[14:31:02]</span> <span class="fl-o">probe 10.0.2.20:80...</span> <span class="fl-g">200 OK (92ms)</span></div>
+          <div><span class="fl-t">[14:31:07]</span> <span class="fl-o">probe 10.0.2.20:80...</span> <span class="fl-g">200 OK (88ms)</span></div>
+          <div><span class="fl-t">[14:31:12]</span> <span class="fl-o">probe 10.0.2.20:80...</span> <span class="fl-r">TIMEOUT (3040ms)</span></div>
+          <div><span class="fl-t">[14:31:17]</span> <span class="fl-o">probe 10.0.2.20:80...</span> <span class="fl-r">CONNECTION REFUSED</span></div>
+          <div><span class="fl-t">[14:31:17]</span> <span class="fl-g">✓ DEGRADED — scenario 01 confirmed</span></div>
+          <div><span class="fl-t">[14:31:17]</span> <span class="fl-flag">FLAG: DOSARENA{01_a3f9c2d18e4b}</span></div>
+          <div>&nbsp;</div>
+          <div><span class="fl-prompt">$</span> <span class="fl-w">python3 cli.py submit 01</span></div>
+          <div><span class="fl-o">Flag: DOSARENA{01_a3f9c2d18e4b}</span></div>
+          <div><span class="fl-g">✓ CORRECT  +100 pts  Total: 200</span></div>
+          <div><span class="fl-y">Writeup unlocked for scenario 01</span></div>
+          <div>&nbsp;</div>
+          <div><span class="fl-prompt">$</span> <span class="fl-cur"></span></div>
+        </div>
+      </div>
+
+      <div class="flag-rules reveal">
+        <div class="fr">
+          <div class="fr-num">01</div>
+          <div class="fr-title">Your attack must be active</div>
+          <p class="fr-desc">Flags are time-windowed (5-minute validity). The judge must have confirmed degradation within the current window. Keep the attack running, then submit.</p>
+        </div>
+        <div class="fr">
+          <div class="fr-num">02</div>
+          <div class="fr-title">No guessing, no copying</div>
+          <p class="fr-desc">Flags are HMAC-SHA256 tokens tied to scenario ID + time window. The judge also verifies it recently confirmed degradation. A valid token without active proof = rejected.</p>
+        </div>
+        <div class="fr">
+          <div class="fr-num">03</div>
+          <div class="fr-title">Writeup unlocks on submit</div>
+          <p class="fr-desc">Full technical writeup — vulnerability mechanics, real-world CVEs, server-side detection commands, and remediation config — available immediately after a correct submission.</p>
+        </div>
+        <div class="fr">
+          <div class="fr-num">04</div>
+          <div class="fr-title">Progressive hints cost points</div>
+          <p class="fr-desc">3 hint levels per scenario. Level 1: directional nudge (-10pts). Level 2: vulnerability class revealed (-25pts). Level 3: near-explicit with commands (-50pts).</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── AMPLIFICATION ── -->
+<section id="amp">
+  <div class="wrap">
+    <div class="s-label">Amplification Factors</div>
+    <h2 class="s-title">Send 1 Mbps.<br><span class="lime">Deliver 650 Mbps.</span></h2>
+
+    <div class="amp-grid reveal">
+      <div class="amp-card">
+        <span class="amp-n">650x</span>
+        <span class="amp-proto">SNMP</span>
+        <div class="amp-port">v2c GetBulk // UDP:161</div>
+      </div>
+      <div class="amp-card">
+        <span class="amp-n">550x</span>
+        <span class="amp-proto">NTP</span>
+        <div class="amp-port">monlist // UDP:123</div>
+      </div>
+      <div class="amp-card">
+        <span class="amp-n">254x</span>
+        <span class="amp-proto">Smurf</span>
+        <div class="amp-port">ICMP broadcast</div>
+      </div>
+      <div class="amp-card">
+        <span class="amp-n">60x</span>
+        <span class="amp-proto">DNS</span>
+        <div class="amp-port">ANY/DNSKEY // UDP:53</div>
+      </div>
+      <div class="amp-card">
+        <span class="amp-n" style="font-size:52px;color:var(--amber)">MULTI</span>
+        <span class="amp-proto">SPRAY</span>
+        <div class="amp-port">Combined vectors</div>
+      </div>
+    </div>
+
+    <p style="margin-top:24px;font-size:14px;color:var(--off);font-weight:300;font-family:var(--D)">
+      Amplification scenarios in DOSArena are <strong style="color:var(--white)">recon and proof exercises</strong> — verify that equipment in the lab scope can serve as reflectors. Same methodology used in real-world network audits.
+    </p>
+  </div>
+</section>
+
+<!-- ── LEARN ── -->
+<section id="learn">
+  <div class="wrap">
+    <div class="s-label">Learning System</div>
+    <h2 class="s-title">Break it first.<br><span class="lime">Understand it after.</span></h2>
+
+    <div class="learn-grid reveal">
+      <div class="learn-card">
+        <span class="lc-icon">?</span>
+        <div class="lc-title">Progressive Hints</div>
+        <span class="lc-badge">3 Levels — Costs Points</span>
+        <p class="lc-desc">Level 1 gives direction without revealing technique. Level 2 names the vulnerability class. Level 3 gives near-explicit commands. Each level deducts points — think before asking.</p>
+      </div>
+      <div class="learn-card">
+        <span class="lc-icon">≡</span>
+        <div class="lc-title">Full Writeups</div>
+        <span class="lc-badge">Unlocks Post-Solve</span>
+        <p class="lc-desc">Research-grade explanations covering: why the vulnerability exists at the kernel level, attack mechanics step-by-step, historical CVEs and incidents, detection commands, and remediation configs.</p>
+      </div>
+      <div class="learn-card">
+        <span class="lc-icon">↔</span>
+        <div class="lc-title">Protected Counterparts</div>
+        <span class="lc-badge">Compare & Learn</span>
+        <p class="lc-desc">Every vulnerable target has a hardened equivalent. After exploiting apache-vuln, try the same attack on apache-protected. See exactly which config change stops it. Theory into practice.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── DEPLOY ── -->
+<section id="deploy">
+  <div class="wrap">
+    <div class="s-label">Deployment</div>
+    <h2 class="s-title">Up in<br><span class="lime">two commands.</span></h2>
+
+    <div class="deploy-tabs reveal">
+      <div class="dt-tab active" data-tab="docker">Docker</div>
+      <div class="dt-tab" data-tab="terraform">Terraform AWS</div>
+    </div>
+
+    <div class="deploy-panel" id="tab-docker">
+      <div class="deploy-req">
+        <span class="dr-item">Docker 20.10+</span>
+        <span class="dr-sep">·</span>
+        <span class="dr-item">Docker Compose v2</span>
+        <span class="dr-sep">·</span>
+        <span class="dr-item">Linux host recommended</span>
+        <span class="dr-sep">·</span>
+        <span class="dr-item">4 GB RAM · 8 GB disk</span>
+      </div>
+
+      <div class="code-block reveal">
+        <div class="cb-bar">
+          <div class="cb-dots"><span></span><span></span><span></span></div>
+          <span class="cb-label">bash</span>
+          <button class="cb-copy" onclick="copyCode(this)">copy</button>
+        </div>
+        <pre class="cb-pre"><span class="c"># clone and start — builds all images on first run</span>
+git clone https://github.com/franckferman/DOSArena.git
+cd DOSArena
+make up</pre>
+      </div>
+
+      <div class="code-block reveal">
+        <div class="cb-bar">
+          <div class="cb-dots"><span></span><span></span><span></span></div>
+          <span class="cb-label">bash — without make</span>
+          <button class="cb-copy" onclick="copyCode(this)">copy</button>
+        </div>
+        <pre class="cb-pre">docker compose -f docker/docker-compose.yml up -d --build</pre>
+      </div>
+
+      <div class="deploy-after reveal">
+        <div class="da-item">
+          <span class="da-label">Attacker shell</span>
+          <code class="da-cmd">make shell</code>
+        </div>
+        <div class="da-item">
+          <span class="da-label">Judge API</span>
+          <code class="da-cmd">http://localhost:8888</code>
+        </div>
+        <div class="da-item">
+          <span class="da-label">Grafana</span>
+          <code class="da-cmd">http://localhost:3000</code>
+        </div>
+        <div class="da-item">
+          <span class="da-label">Prometheus</span>
+          <code class="da-cmd">http://localhost:9090</code>
+        </div>
+        <div class="da-item">
+          <span class="da-label">Stop</span>
+          <code class="da-cmd">make down</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="deploy-panel hidden" id="tab-terraform">
+      <div class="deploy-req">
+        <span class="dr-item">Terraform 1.x+</span>
+        <span class="dr-sep">·</span>
+        <span class="dr-item">AWS CLI configured</span>
+        <span class="dr-sep">·</span>
+        <span class="dr-item">EC2 key pair</span>
+        <span class="dr-sep">·</span>
+        <span class="dr-item">~$0.35/hour</span>
+      </div>
+
+      <div class="code-block reveal">
+        <div class="cb-bar">
+          <div class="cb-dots"><span></span><span></span><span></span></div>
+          <span class="cb-label">bash</span>
+          <button class="cb-copy" onclick="copyCode(this)">copy</button>
+        </div>
+        <pre class="cb-pre"><span class="c"># create variables file (do not commit)</span>
+cat &gt; terraform/aws/terraform.tfvars &lt;&lt; EOF
+key_pair = "your-keypair-name"
+your_ip  = "$(curl -s ifconfig.me)/32"
+region   = "eu-west-1"
+EOF
+
+make tf-init
+make tf-apply</pre>
+      </div>
+
+      <div class="deploy-after reveal">
+        <div class="da-item">
+          <span class="da-label">SSH attacker</span>
+          <code class="da-cmd">ssh ubuntu@&lt;ip&gt; -i ~/.ssh/keypair.pem</code>
+        </div>
+        <div class="da-item">
+          <span class="da-label">Tear down</span>
+          <code class="da-cmd">make tf-destroy</code>
+        </div>
+        <div class="da-item">
+          <span class="da-label">Cost</span>
+          <code class="da-cmd">~$0.35/hour (t3.medium + 7×t3.small)</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section id="cta">
+  <h2 class="cta-title">Enter the Arena.<br>Break something real.</h2>
+  <p class="cta-sub">Docker Compose or Terraform AWS — deploy in minutes</p>
+  <a href="#deploy" class="btn-cta">Deploy DOSArena</a>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div class="f-logo"><span class="d">DOS</span><span class="a">Arena</span></div>
+        <p class="f-tagline">The first DoS/DDoS training platform with live proof-of-impact scoring. Built for red teamers and security researchers.</p>
+      </div>
+      <div>
+        <div class="f-col-head">Platform</div>
+        <ul class="f-list">
+          <li><a href="#how">How It Works</a></li>
+          <li><a href="#scenarios">Scenarios</a></li>
+          <li><a href="#flags">Flag System</a></li>
+          <li><a href="https://github.com/franckferman/DOSArena#flag-system">Scoreboard</a></li>
+          <li><a href="https://github.com/franckferman/DOSArena#network-topology">Architecture</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="f-col-head">Documentation</div>
+        <ul class="f-list">
+          <li><a href="#deploy">Quick Start</a></li>
+          <li><a href="https://github.com/franckferman/DOSArena#network-topology">Network Fundamentals</a></li>
+          <li><a href="https://github.com/franckferman/DOSArena#scenarios">Module Reference</a></li>
+          <li><a href="https://github.com/franckferman/DOSArena">Audit Methodology</a></li>
+          <li><a href="https://github.com/franckferman/DOSArena#judge-api">Judge API</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="f-col-head">Resources</div>
+        <ul class="f-list">
+          <li><a href="https://github.com/franckferman/Floodles">Floodles Toolkit</a></li>
+          <li><a href="#deploy">Docker Lab</a></li>
+          <li><a href="#deploy">Terraform AWS</a></li>
+          <li><a href="https://github.com/franckferman/DOSArena">GitHub</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="f-copy">© 2025 DOSArena. Open source.</p>
+      <p class="f-legal">For authorized security research and red team training only.<br>Use exclusively within signed contractual scope.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Scroll reveal
+const els = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('in');
+      io.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+els.forEach(el => io.observe(el));
+
+// Nav active state
+const secs = document.querySelectorAll('section[id]');
+const navAs = document.querySelectorAll('.nav-links a');
+window.addEventListener('scroll', () => {
+  let cur = '';
+  secs.forEach(s => { if (window.scrollY >= s.offsetTop - 80) cur = s.id; });
+  navAs.forEach(a => {
+    a.style.color = a.getAttribute('href') === '#'+cur ? 'var(--white)' : '';
+  });
+}, { passive: true });
+
+// Hamburger menu
+const ham = document.getElementById('ham');
+const navLinks = document.getElementById('nav-links');
+if(ham && navLinks){
+  ham.addEventListener('click', () => {
+    ham.classList.toggle('open');
+    navLinks.classList.toggle('open');
+  });
+  // Close on link click
+  navLinks.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => {
+      ham.classList.remove('open');
+      navLinks.classList.remove('open');
+    });
+  });
+}
+
+// Deploy tab switching
+document.querySelectorAll('.dt-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.dt-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.deploy-panel').forEach(p => p.classList.add('hidden'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.remove('hidden');
+  });
+});
+
+// Copy code buttons
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.textContent).then(() => {
+    btn.textContent = 'copied';
+    setTimeout(() => btn.textContent = 'copy', 1500);
+  });
+}
+
+</script>
+</body>
+</html>

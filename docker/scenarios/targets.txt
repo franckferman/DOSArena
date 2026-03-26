@@ -1,0 +1,27 @@
+DOSArena — Target Reference
+==========================
+
+NETWORK TOPOLOGY
+  10.0.1.10   attacker         — Your machine
+  10.0.2.99   monitor          — Monitoring (iftop, tcpdump, ss)
+
+DMZ TARGETS (vulnerable)
+  10.0.2.20   apache-vuln      — Apache 2.4, no timeouts, SYN cookies OFF
+  10.0.2.30   dns-open         — BIND9 open resolver (DNS amp ~60x)
+  10.0.2.31   ntp-vuln         — NTPd monlist enabled (NTP amp ~550x)
+  10.0.2.32   snmp-vuln        — Net-SNMP public community (SNMP amp ~650x)
+  10.0.2.40   mysql-vuln       — MySQL max_connections=50
+  10.0.2.41   postgres-vuln    — PostgreSQL max_connections=30
+  10.0.2.50   fw-stateless     — iptables, no conntrack (ACK/XMAS pass)
+  10.0.2.51   fw-stateful      — iptables + conntrack (limited table)
+
+PROTECTED TARGETS (hardened)
+  10.0.3.20   apache-protected — Apache + mod_reqtimeout + iptables rate limit
+  10.0.3.21   nginx-protected  — nginx event-driven + rate limiting
+
+QUICK CHECKS
+  curl http://10.0.2.20/          Test apache-vuln HTTP
+  dig @10.0.2.30 isc.org ANY      Test DNS open resolver
+  ntpdc -c monlist 10.0.2.31      Test NTP monlist
+  snmpwalk -v2c -c public 10.0.2.32 .1   Test SNMP
+  mysql -h 10.0.2.40 -u root -plabpass   Test MySQL

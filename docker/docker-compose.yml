@@ -1,0 +1,251 @@
+
+# ============================================================================
+# DOSArena — Complete Lab
+# docker compose up -d
+# docker compose exec attacker bash
+# ============================================================================
+
+networks:
+  attacker_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "10.0.1.0/24"
+  dmz_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "10.0.2.0/24"
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+  protected_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "10.0.3.0/24"
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+  mgmt_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "10.0.99.0/24"
+
+services:
+
+  # ── ATTACKER ──────────────────────────────────────────────────────────────
+  attacker:
+    build: ./attacker
+    container_name: dosarena_attacker
+    hostname: attacker
+    networks:
+      attacker_net:
+        ipv4_address: 10.0.1.10
+      dmz_net:
+        ipv4_address: 10.0.2.10
+      protected_net:
+        ipv4_address: 10.0.3.10
+      mgmt_net:
+        ipv4_address: 10.0.99.10
+    volumes:
+      - ./scenarios:/opt/scenarios:ro
+      - ./logs:/opt/logs
+      - ../ui:/opt/ui:ro
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    sysctls:
+      net.ipv4.ping_group_range: "0 65535"
+    environment:
+      JUDGE_URL: "http://10.0.99.30:8888"
+      PLAYER_NAME: "player1"
+    stdin_open: true
+    tty: true
+    command: tail -f /dev/null
+
+  # ── WEB TARGETS ───────────────────────────────────────────────────────────
+  apache-vuln:
+    build: ./targets/apache-vuln
+    container_name: dosarena_apache_vuln
+    hostname: apache-vuln
+    networks:
+      dmz_net:
+        ipv4_address: 10.0.2.20
+    sysctls:
+      net.ipv4.tcp_syncookies: "0"
+      net.ipv4.tcp_max_syn_backlog: "8"
+      net.core.somaxconn: "8"
+
+  apache-protected:
+    build: ./targets/apache-protected
+    container_name: dosarena_apache_protected
+    hostname: apache-protected
+    networks:
+      protected_net:
+        ipv4_address: 10.0.3.20
+    sysctls:
+      net.ipv4.tcp_syncookies: "1"
+      net.ipv4.tcp_max_syn_backlog: "4096"
+    cap_add:
+      - NET_ADMIN
+
+  nginx-protected:
+    build: ./targets/nginx-protected
+    container_name: dosarena_nginx_protected
+    hostname: nginx-protected
+    networks:
+      protected_net:
+        ipv4_address: 10.0.3.21
+    sysctls:
+      net.ipv4.tcp_syncookies: "1"
+
+  # ── NETWORK SERVICE TARGETS ───────────────────────────────────────────────
+  dns-open:
+    build: ./targets/dns-open
+    container_name: dosarena_dns_open
+    hostname: dns-open
+    networks:
+      dmz_net:
+        ipv4_address: 10.0.2.30
+
+  ntp-vuln:
+    build: ./targets/ntp-vuln
+    container_name: dosarena_ntp_vuln
+    hostname: ntp-vuln
+    networks:
+      dmz_net:
+        ipv4_address: 10.0.2.31
+
+  snmp-vuln:
+    build: ./targets/snmp-vuln
+    container_name: dosarena_snmp_vuln
+    hostname: snmp-vuln
+    networks:
+      dmz_net:
+        ipv4_address: 10.0.2.32
+
+  # ── DATABASE TARGETS ──────────────────────────────────────────────────────
+  mysql-vuln:
+    image: mysql:8.0
+    container_name: dosarena_mysql_vuln
+    hostname: mysql-vuln
+    networks:
+      dmz_net:
+        ipv4_address: 10.0.2.40
+    environment:
+      MYSQL_ROOT_PASSWORD: "arenapass"
+      MYSQL_DATABASE: "testdb"
+    command: >
+      --max_connections=50
+      --connect_timeout=10
+
+  postgres-vuln:
+    image: postgres:15
+    container_name: dosarena_postgres_vuln
+    hostname: postgres-vuln
+    networks:
+      dmz_net:
+        ipv4_address: 10.0.2.41
+    environment:
+      POSTGRES_PASSWORD: "arenapass"
+    command: postgres -c max_connections=30
+
+  # ── FIREWALL TARGETS ──────────────────────────────────────────────────────
+  fw-stateless:
+    build: ./targets/firewall-stateless
+    container_name: dosarena_fw_stateless
+    hostname: fw-stateless
+    networks:
+      dmz_net:
+        ipv4_address: 10.0.2.50
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+
+  fw-stateful:
+    build: ./targets/firewall-stateful
+    container_name: dosarena_fw_stateful
+    hostname: fw-stateful
+    networks:
+      dmz_net:
+        ipv4_address: 10.0.2.51
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+
+  # ── JUDGE ─────────────────────────────────────────────────────────────────
+  judge:
+    build: ../judge
+    container_name: dosarena_judge
+    hostname: judge
+    networks:
+      mgmt_net:
+        ipv4_address: 10.0.99.30
+      dmz_net:
+        ipv4_address: 10.0.2.98
+      protected_net:
+        ipv4_address: 10.0.3.98
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      JUDGE_SECRET:             "change-me-in-production"
+      FLAG_TTL:                 "300"
+      TARGET_APACHE_VULN:       "10.0.2.20"
+      TARGET_APACHE_PROTECTED:  "10.0.3.20"
+      TARGET_NGINX_PROTECTED:   "10.0.3.21"
+      TARGET_DNS:               "10.0.2.30"
+      TARGET_NTP:               "10.0.2.31"
+      TARGET_SNMP:              "10.0.2.32"
+      TARGET_MYSQL:             "10.0.2.40"
+      TARGET_POSTGRES:          "10.0.2.41"
+      TARGET_FW_STATELESS:      "10.0.2.50"
+      TARGET_FW_STATEFUL:       "10.0.2.51"
+    ports:
+      - "8888:8888"
+
+  # ── MONITORING ────────────────────────────────────────────────────────────
+  monitor:
+    image: nicolaka/netshoot
+    container_name: dosarena_monitor
+    hostname: monitor
+    networks:
+      attacker_net:
+        ipv4_address: 10.0.1.99
+      dmz_net:
+        ipv4_address: 10.0.2.99
+      protected_net:
+        ipv4_address: 10.0.3.99
+      mgmt_net:
+        ipv4_address: 10.0.99.99
+    cap_add:
+      - NET_ADMIN
+    stdin_open: true
+    tty: true
+    command: tail -f /dev/null
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: dosarena_prometheus
+    hostname: prometheus
+    networks:
+      mgmt_net:
+        ipv4_address: 10.0.99.20
+    volumes:
+      - ./monitor/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: dosarena_grafana
+    hostname: grafana
+    networks:
+      mgmt_net:
+        ipv4_address: 10.0.99.21
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "dosarena"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus

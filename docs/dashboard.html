@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOSArena — Live Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,700;0,900;1,900&family=Oswald:wght@200;400;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #0f0f0d;
+  --bg2:   #141412;
+  --panel: #1a1a18;
+  --card:  #1f1f1c;
+  --line:  #2a2a26;
+  --line2: #333330;
+  --lime:  #b8ff00;
+  --lime2: #8acc00;
+  --red:   #ff2800;
+  --amber: #ffaa00;
+  --blue:  #00aaff;
+  --green: #00dd66;
+  --white: #f0ede6;
+  --off:   #7a7870;
+  --dim:   #3a3a36;
+  --D: 'Barlow Condensed', sans-serif;
+  --O: 'Oswald', sans-serif;
+  --M: 'JetBrains Mono', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--bg);
+  color:var(--white);
+  font-family:var(--M);
+  font-size:12px;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes pulse   {0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes blink   {0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes slide-r {from{transform:translateX(-8px);opacity:0}to{transform:none;opacity:1}}
+@keyframes bar-grow{from{width:0}to{width:var(--w)}}
+@keyframes count   {from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes glow-p  {0%,100%{text-shadow:0 0 8px var(--lime)}50%{text-shadow:0 0 24px var(--lime),0 0 48px rgba(184,255,0,.3)}}
+@keyframes spin    {to{transform:rotate(360deg)}}
+
+/* ── TOPBAR ── */
+.topbar{
+  height:44px;
+  background:var(--bg2);
+  border-bottom:1px solid var(--line);
+  display:flex;align-items:center;
+  padding:0 20px;
+  gap:0;
+  flex-shrink:0;
+  z-index:100;
+}
+
+.tb-logo{
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:20px;
+  letter-spacing:-1px;
+  margin-right:24px;
+  text-decoration:none;
+  flex-shrink:0;
+}
+.tb-logo .d{color:var(--lime)}
+.tb-logo .a{color:var(--white)}
+
+.tb-sep{width:1px;height:24px;background:var(--line);margin:0 16px}
+
+.tb-title{
+  font-family:var(--O);
+  font-size:10px;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  color:var(--off);
+}
+
+.tb-right{
+  margin-left:auto;
+  display:flex;align-items:center;gap:20px;
+}
+
+.tb-time{
+  font-family:var(--M);
+  font-size:13px;
+  color:var(--white);
+  letter-spacing:2px;
+}
+
+.live-badge{
+  display:flex;align-items:center;gap:6px;
+  font-size:9px;
+  letter-spacing:3px;
+  color:var(--lime);
+}
+.live-dot{
+  width:7px;height:7px;
+  background:var(--lime);
+  border-radius:50%;
+  box-shadow:0 0 6px var(--lime);
+  animation:pulse 1.5s ease-in-out infinite;
+}
+
+.tb-judge{
+  font-size:9px;
+  letter-spacing:2px;
+  padding:3px 10px;
+  border:1px solid rgba(184,255,0,.25);
+  color:var(--lime);
+  cursor:pointer;
+  transition:all .15s;
+}
+.tb-judge:hover{background:rgba(184,255,0,.08)}
+
+/* ── MAIN LAYOUT ── */
+.main{
+  flex:1;
+  display:grid;
+  grid-template-columns:280px 1fr 280px;
+  grid-template-rows:1fr;
+  gap:1px;
+  background:var(--line);
+  overflow:hidden;
+}
+
+/* ── SHARED PANEL STYLES ── */
+.pane{
+  background:var(--bg);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.pane-header{
+  height:36px;
+  background:var(--card);
+  border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;
+  flex-shrink:0;
+}
+
+.ph-title{
+  font-family:var(--O);
+  font-size:9px;
+  font-weight:400;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  color:var(--off);
+}
+
+.ph-badge{
+  font-family:var(--M);
+  font-size:8px;
+  letter-spacing:2px;
+  padding:2px 6px;
+  border:1px solid;
+}
+.ph-badge.green{color:var(--green);border-color:rgba(0,221,102,.25)}
+.ph-badge.lime {color:var(--lime); border-color:rgba(184,255,0,.25)}
+.ph-badge.red  {color:var(--red);  border-color:rgba(255,40,0,.25)}
+.ph-badge.amber{color:var(--amber);border-color:rgba(255,170,0,.25)}
+
+.pane-body{
+  flex:1;
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:var(--dim) transparent;
+}
+.pane-body::-webkit-scrollbar{width:2px}
+.pane-body::-webkit-scrollbar-thumb{background:var(--dim)}
+
+/* ══════════════════════════════
+   LEFT COLUMN — Targets + Scoreboard
+══════════════════════════════ */
+
+/* Target rows */
+.target-row{
+  padding:12px 16px;
+  border-bottom:1px solid var(--line);
+  cursor:default;
+  transition:background .1s;
+  animation:slide-r .3s ease both;
+}
+.target-row:hover{background:var(--panel)}
+
+.tr-head{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:4px;
+}
+
+.tr-dot{
+  width:7px;height:7px;
+  border-radius:50%;
+  flex-shrink:0;
+}
+.tr-dot.ok   {background:var(--green);box-shadow:0 0 5px var(--green)}
+.tr-dot.down {background:var(--red);  box-shadow:0 0 5px var(--red);animation:pulse .8s ease-in-out infinite}
+.tr-dot.warn {background:var(--amber);box-shadow:0 0 5px var(--amber);animation:pulse 1.5s ease-in-out infinite}
+
+.tr-name{
+  font-family:var(--D);
+  font-weight:700;
+  font-size:14px;
+  color:var(--white);
+  flex:1;
+}
+
+.tr-flag{
+  font-size:8px;
+  letter-spacing:2px;
+  color:var(--lime);
+  border:1px solid rgba(184,255,0,.2);
+  padding:1px 5px;
+  animation:pulse 3s ease-in-out infinite;
+}
+
+.tr-ip{
+  font-size:10px;
+  color:var(--dim);
+  letter-spacing:1px;
+  margin-bottom:6px;
+}
+
+.tr-bar{
+  height:2px;
+  background:var(--line);
+  position:relative;
+  overflow:hidden;
+}
+
+.tr-bar-fill{
+  position:absolute;
+  left:0;top:0;bottom:0;
+  transition:width .8s cubic-bezier(.16,1,.3,1);
+}
+.tr-bar-fill.ok   {background:var(--green)}
+.tr-bar-fill.down {background:var(--red)}
+.tr-bar-fill.warn {background:var(--amber)}
+
+.tr-stats{
+  display:flex;justify-content:space-between;
+  margin-top:5px;
+  font-size:9px;
+  color:var(--dim);
+  letter-spacing:1px;
+}
+
+/* Scoreboard */
+.score-row{
+  display:flex;align-items:center;
+  padding:10px 16px;
+  border-bottom:1px solid var(--line);
+  gap:10px;
+  transition:background .1s;
+}
+.score-row:hover{background:var(--panel)}
+
+.sr-rank{
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:20px;
+  color:var(--dim);
+  width:28px;
+  flex-shrink:0;
+  line-height:1;
+}
+.sr-rank.gold   {color:var(--amber);text-shadow:0 0 8px rgba(255,170,0,.4)}
+.sr-rank.silver {color:#b0b0a8}
+.sr-rank.bronze {color:#c87040}
+
+.sr-info{flex:1}
+
+.sr-name{
+  font-family:var(--O);
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:1px;
+  color:var(--white);
+}
+
+.sr-solves{
+  font-size:9px;
+  color:var(--dim);
+  letter-spacing:1px;
+  margin-top:2px;
+}
+
+.sr-pts{
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:24px;
+  color:var(--lime);
+  line-height:1;
+}
+
+.sr-bar{
+  width:100%;
+  height:2px;
+  background:var(--line);
+  margin-top:6px;
+  position:relative;
+}
+.sr-bar-fill{
+  position:absolute;left:0;top:0;bottom:0;
+  background:linear-gradient(to right, var(--lime2), var(--lime));
+  transition:width 1s cubic-bezier(.16,1,.3,1);
+}
+
+/* ══════════════════════════════
+   CENTER COLUMN — Main metrics
+══════════════════════════════ */
+.center-pane{
+  background:var(--bg);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+/* Top KPI row */
+.kpi-row{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:1px;
+  background:var(--line);
+  border-bottom:1px solid var(--line);
+  flex-shrink:0;
+}
+
+.kpi{
+  background:var(--card);
+  padding:16px 20px;
+  transition:background .15s;
+}
+.kpi:hover{background:var(--panel)}
+
+.kpi-val{
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:clamp(28px,3.5vw,44px);
+  line-height:1;
+  display:block;
+  animation:count .4s ease both;
+}
+.kpi-val.lime  {color:var(--lime); text-shadow:0 0 16px rgba(184,255,0,.25)}
+.kpi-val.red   {color:var(--red)}
+.kpi-val.amber {color:var(--amber)}
+.kpi-val.green {color:var(--green)}
+.kpi-val.white {color:var(--white)}
+
+.kpi-label{
+  font-family:var(--O);
+  font-size:9px;
+  font-weight:400;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  color:var(--off);
+  margin-top:4px;
+}
+
+.kpi-delta{
+  font-family:var(--M);
+  font-size:9px;
+  color:var(--dim);
+  margin-top:2px;
+}
+.kpi-delta.up  {color:var(--green)}
+.kpi-delta.down{color:var(--red)}
+
+/* Scenario status grid */
+.scenario-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:1px;
+  background:var(--line);
+  border-bottom:1px solid var(--line);
+  flex-shrink:0;
+}
+
+.sc-tile{
+  background:var(--card);
+  padding:14px 16px;
+  cursor:default;
+  transition:background .15s;
+  position:relative;
+  overflow:hidden;
+}
+.sc-tile:hover{background:var(--panel)}
+
+.sc-tile::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:2px;
+  background:var(--line);
+  transition:background .2s;
+}
+.sc-tile.done::before {background:var(--lime)}
+.sc-tile.active::before{background:var(--amber);animation:pulse .8s ease-in-out infinite}
+
+.sct-id{
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:28px;
+  color:var(--line2);
+  line-height:1;
+  margin-bottom:4px;
+  transition:color .2s;
+}
+.sc-tile.done   .sct-id{color:rgba(184,255,0,.2)}
+.sc-tile.active .sct-id{color:rgba(255,170,0,.2)}
+
+.sct-name{
+  font-family:var(--O);
+  font-size:10px;
+  font-weight:400;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--off);
+  margin-bottom:8px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.sct-status{
+  font-size:9px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+}
+.sc-tile.done   .sct-status{color:var(--lime)}
+.sc-tile.active .sct-status{color:var(--amber)}
+.sc-tile.idle   .sct-status{color:var(--dim)}
+
+.sct-pts{
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:20px;
+  position:absolute;
+  top:12px;right:12px;
+  line-height:1;
+}
+.sc-tile.done .sct-pts{color:var(--lime)}
+.sc-tile.idle .sct-pts,.sc-tile.active .sct-pts{color:var(--dim)}
+
+/* Live activity feed */
+.feed{
+  flex:1;
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:var(--dim) transparent;
+}
+
+.feed-row{
+  display:grid;
+  grid-template-columns:58px 80px 1fr 72px;
+  gap:12px;
+  padding:9px 16px;
+  border-bottom:1px solid var(--line);
+  align-items:center;
+  animation:slide-r .25s ease both;
+  transition:background .1s;
+}
+.feed-row:hover{background:var(--panel)}
+
+.fr-time  {font-size:10px;color:var(--dim);letter-spacing:1px}
+.fr-player{font-family:var(--O);font-size:11px;font-weight:400;letter-spacing:1px;color:var(--off);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fr-event {font-size:11px;color:var(--white)}
+.fr-event .sc{color:var(--amber)}
+.fr-event .ok{color:var(--green)}
+.fr-event .fail{color:var(--red)}
+.fr-pts   {font-family:var(--D);font-weight:900;font-style:italic;font-size:20px;text-align:right;line-height:1}
+.fr-pts.pos{color:var(--lime)}
+.fr-pts.neg{color:var(--red)}
+.fr-pts.dim{color:var(--dim)}
+
+/* Bottom bar — judge poll log */
+.judge-log{
+  height:120px;
+  border-top:1px solid var(--line);
+  background:var(--bg2);
+  overflow-y:auto;
+  flex-shrink:0;
+  scrollbar-width:thin;
+  scrollbar-color:var(--dim) transparent;
+}
+
+.jl-header{
+  position:sticky;top:0;
+  height:24px;
+  background:var(--card);
+  border-bottom:1px solid var(--line);
+  display:flex;align-items:center;
+  padding:0 16px;gap:8px;
+  font-size:8px;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  color:var(--off);
+}
+
+.jl-line{
+  font-family:var(--M);
+  font-size:10px;
+  padding:3px 16px;
+  line-height:1.8;
+  white-space:nowrap;
+  animation:slide-r .2s ease both;
+}
+.jl-t  {color:var(--dim)}
+.jl-ok {color:var(--green)}
+.jl-dn {color:var(--red)}
+.jl-fl {color:var(--lime);font-weight:500}
+.jl-nf {color:var(--off)}
+
+/* ══════════════════════════════
+   RIGHT COLUMN — Metrics + Hints
+══════════════════════════════ */
+
+/* Attack metrics bars */
+.metric-row{
+  padding:12px 16px;
+  border-bottom:1px solid var(--line);
+  transition:background .1s;
+}
+.metric-row:hover{background:var(--panel)}
+
+.mr-head{
+  display:flex;justify-content:space-between;align-items:baseline;
+  margin-bottom:6px;
+}
+
+.mr-name{
+  font-family:var(--O);
+  font-size:10px;
+  font-weight:400;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--off);
+}
+
+.mr-val{
+  font-family:var(--D);
+  font-weight:900;
+  font-style:italic;
+  font-size:20px;
+  color:var(--white);
+  line-height:1;
+}
+
+.mr-bar{
+  height:3px;
+  background:var(--line);
+  border-radius:0;
+  overflow:hidden;
+}
+.mr-fill{
+  height:100%;
+  border-radius:0;
+  transition:width 1s cubic-bezier(.16,1,.3,1);
+}
+
+.mr-sub{
+  font-size:9px;
+  color:var(--dim);
+  letter-spacing:1px;
+  margin-top:4px;
+}
+
+/* Hint activity */
+.hint-row{
+  padding:10px 14px;
+  border-bottom:1px solid var(--line);
+  display:flex;gap:10px;align-items:start;
+  animation:slide-r .3s ease both;
+}
+
+.hr-badge{
+  font-family:var(--M);
+  font-size:8px;
+  letter-spacing:1px;
+  padding:2px 6px;
+  border:1px solid;
+  flex-shrink:0;
+  margin-top:2px;
+}
+.hr-badge.h1{color:var(--off);  border-color:var(--dim)}
+.hr-badge.h2{color:var(--amber);border-color:rgba(255,170,0,.3)}
+.hr-badge.h3{color:var(--red);  border-color:rgba(255,40,0,.3)}
+
+.hr-body{}
+.hr-player{font-family:var(--O);font-size:11px;font-weight:400;letter-spacing:1px;color:var(--white);margin-bottom:2px}
+.hr-text  {font-size:10px;color:var(--off);line-height:1.5}
+.hr-time  {font-size:9px;color:var(--dim)}
+
+/* Alert box */
+.alert{
+  margin:12px;
+  padding:12px 14px;
+  border-left:3px solid var(--lime);
+  background:rgba(184,255,0,.04);
+  animation:slide-r .3s ease;
+}
+.alert.red{border-color:var(--red);background:rgba(255,40,0,.04)}
+
+.alert-title{
+  font-family:var(--O);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  margin-bottom:4px;
+}
+.alert .green{color:var(--lime)}
+.alert .red-t{color:var(--red)}
+
+.alert-body{font-size:11px;color:var(--off);line-height:1.5}
+
+/* ══════════════════════════════
+   BOTTOM STATUS BAR
+══════════════════════════════ */
+.statusbar{
+  height:28px;
+  background:var(--card);
+  border-top:1px solid var(--line);
+  display:flex;align-items:center;
+  padding:0 16px;gap:24px;
+  flex-shrink:0;
+}
+
+.sb-item{
+  display:flex;align-items:center;gap:6px;
+  font-size:9px;
+  letter-spacing:2px;
+  color:var(--off);
+}
+
+.sb-dot{width:5px;height:5px;border-radius:50%}
+.sb-dot.green{background:var(--green);box-shadow:0 0 4px var(--green)}
+.sb-dot.red  {background:var(--red)  ;box-shadow:0 0 4px var(--red)}
+.sb-dot.amber{background:var(--amber);box-shadow:0 0 4px var(--amber)}
+
+.sb-right{
+  margin-left:auto;
+  display:flex;gap:20px;align-items:center;
+}
+
+.sb-mono{font-family:var(--M);font-size:9px;color:var(--dim);letter-spacing:1px}
+</style>
+</head>
+<body>
+
+<!-- ── TOPBAR ── -->
+<div class="topbar">
+  <a href="index.html" class="tb-logo"><span class="d">DOS</span><span class="a">Arena</span></a>
+  <div class="tb-sep"></div>
+  <span class="tb-title">Live Dashboard</span>
+  <div class="tb-right">
+    <span class="tb-time" id="clock">--:--:--</span>
+    <div class="live-badge"><div class="live-dot"></div>Live</div>
+    <span class="tb-judge" id="judge-btn">Judge: ● Online</span>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+  <!-- LEFT — targets + scores -->
+  <div class="pane">
+    <div class="pane-header">
+      <span class="ph-title">Target Status</span>
+      <span class="ph-badge green" id="target-ok-count">6 Online</span>
+    </div>
+    <div class="pane-body" id="targets-list"></div>
+
+    <div class="pane-header" style="border-top:1px solid var(--line)">
+      <span class="ph-title">Scoreboard</span>
+      <span class="ph-badge lime">Live</span>
+    </div>
+    <div class="pane-body" id="scoreboard"></div>
+  </div>
+
+  <!-- CENTER — KPIs + scenarios + feed + judge log -->
+  <div class="center-pane">
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <div class="pane-header">
+      <span class="ph-title">Scenario Status</span>
+      <span class="ph-badge amber" id="sc-active">2 Active</span>
+    </div>
+    <div class="scenario-grid" id="sc-grid"></div>
+
+    <div class="pane-header">
+      <span class="ph-title">Activity Feed</span>
+      <span class="ph-badge lime">Auto-scroll</span>
+    </div>
+    <div class="feed" id="feed"></div>
+
+    <div class="judge-log" id="judge-log">
+      <div class="jl-header"><div class="live-dot" style="width:5px;height:5px"></div>Judge Poll Log</div>
+    </div>
+  </div>
+
+  <!-- RIGHT — metrics + hints + alerts -->
+  <div class="pane">
+    <div class="pane-header">
+      <span class="ph-title">Attack Metrics</span>
+      <span class="ph-badge amber" id="metrics-badge">Sampling</span>
+    </div>
+    <div class="pane-body" id="metrics"></div>
+
+    <div class="pane-header" style="border-top:1px solid var(--line)">
+      <span class="ph-title">Hint Activity</span>
+      <span class="ph-badge red" id="hint-count">3 Used</span>
+    </div>
+    <div class="pane-body" id="hints-pane"></div>
+  </div>
+</div>
+
+<!-- ── STATUS BAR ── -->
+<div class="statusbar">
+  <div class="sb-item"><div class="sb-dot green"></div>Judge Online</div>
+  <div class="sb-item"><div class="sb-dot green" id="db-dot"></div>Targets Reachable</div>
+  <div class="sb-item"><div class="sb-dot amber"></div>Attack Detected</div>
+  <div class="sb-item" id="sb-poll">Poll: 5s interval</div>
+  <div class="sb-right">
+    <span class="sb-mono" id="sb-flags">Flags issued: 0</span>
+    <span class="sb-mono" id="sb-players">Players: 0</span>
+    <span class="sb-mono">v1.0.0</span>
+  </div>
+</div>
+
+<script>
+// ── Simulated state (replace with real judge API calls) ──
+const JUDGE_URL = new URLSearchParams(window.location.search).get('judge') || window.JUDGE_URL || 'http://localhost:8888';
+
+const TARGETS = [
+  {id:'apache-vuln',   ip:'10.0.2.20', service:'HTTP:80',  status:'down', response:0,    uptime:0},
+  {id:'dns-open',      ip:'10.0.2.30', service:'UDP:53',   status:'ok',   response:12,   uptime:99.2},
+  {id:'ntp-vuln',      ip:'10.0.2.31', service:'UDP:123',  status:'ok',   response:8,    uptime:100},
+  {id:'snmp-vuln',     ip:'10.0.2.32', service:'UDP:161',  status:'ok',   response:15,   uptime:100},
+  {id:'mysql-vuln',    ip:'10.0.2.40', service:'TCP:3306', status:'warn', response:2800, uptime:72},
+  {id:'fw-stateless',  ip:'10.0.2.50', service:'HTTP:80',  status:'ok',   response:6,    uptime:100},
+  {id:'apache-prot',   ip:'10.0.3.20', service:'HTTP:80',  status:'ok',   response:14,   uptime:100},
+  {id:'nginx-prot',    ip:'10.0.3.21', service:'HTTP:80',  status:'ok',   response:9,    uptime:100},
+];
+
+const SCENARIOS = [
+  {id:'01', name:'SYN Flood',    pts:100, status:'done',   solvers:3},
+  {id:'02', name:'Slowloris',    pts:100, status:'done',   solvers:2},
+  {id:'03', name:'ACK Bypass',   pts:150, status:'active', solvers:0},
+  {id:'04', name:'DNS Amp',      pts:100, status:'done',   solvers:4},
+  {id:'05', name:'NTP monlist',  pts:100, status:'active', solvers:1},
+  {id:'06', name:'SNMP GetBulk', pts:150, status:'idle',   solvers:0},
+  {id:'07', name:'TCP Starve',   pts:150, status:'idle',   solvers:0},
+  {id:'08', name:'Slow POST',    pts:200, status:'idle',   solvers:0},
+];
+
+const PLAYERS = [
+  {name:'red_0x4f', pts:450, solves:['01','02','04','05']},
+  {name:'n0ise',    pts:350, solves:['01','04','06']},
+  {name:'v01d_ptr', pts:250, solves:['04','05','07']},
+  {name:'pwner_k',  pts:200, solves:['08']},
+  {name:'0xc0ffee', pts:100, solves:['04']},
+];
+
+let feedEvents = [
+  {time:'14:34:12', player:'red_0x4f',  event:'solved <span class="sc">SYN Flood</span>',    pts:100, type:'solve'},
+  {time:'14:33:58', player:'n0ise',     event:'flag <span class="ok">CONFIRMED</span> sc 04', pts:100, type:'solve'},
+  {time:'14:33:41', player:'v01d_ptr',  event:'MySQL starvation proven',                      pts:150, type:'solve'},
+  {time:'14:33:20', player:'red_0x4f',  event:'hint 02 <span class="fail">lvl 2</span> used', pts:-25, type:'hint'},
+  {time:'14:32:55', player:'pwner_k',   event:'solved <span class="sc">Slow POST</span>',     pts:200, type:'solve'},
+  {time:'14:32:18', player:'n0ise',     event:'flag <span class="ok">CONFIRMED</span> sc 06', pts:150, type:'solve'},
+  {time:'14:31:44', player:'0xc0ffee',  event:'hint 03 <span class="fail">lvl 1</span> used', pts:-10, type:'hint'},
+  {time:'14:31:02', player:'v01d_ptr',  event:'NTP monlist proven',                            pts:100, type:'solve'},
+  {time:'14:30:18', player:'pwner_k',   event:'hint 08 <span class="fail">lvl 3</span> used', pts:-50, type:'hint'},
+  {time:'14:29:44', player:'red_0x4f',  event:'solved <span class="sc">Slowloris</span>',     pts:100, type:'solve'},
+];
+
+let judgeLog = [
+  {t:'14:34:17', target:'apache-vuln', result:'down', ms:0,    flag:true,  sc:'01'},
+  {t:'14:34:12', target:'dns-open',    result:'ok',   ms:11},
+  {t:'14:34:07', target:'ntp-vuln',    result:'ok',   ms:7},
+  {t:'14:34:02', target:'mysql-vuln',  result:'warn', ms:2800},
+  {t:'14:33:57', target:'apache-vuln', result:'down', ms:0},
+  {t:'14:33:52', target:'snmp-vuln',   result:'ok',   ms:14},
+  {t:'14:33:47', target:'apache-vuln', result:'down', ms:0,    flag:true,  sc:'02'},
+];
+
+let attackMetrics = [
+  {name:'SYN/s (apache-vuln)',  val:98432,  max:200000, unit:'pps',  color:'#ff2800'},
+  {name:'Mbps (apache-vuln)',   val:5.2,    max:100,    unit:'Mbps', color:'#ffaa00'},
+  {name:'Slow sockets',         val:203,    max:300,    unit:'/300', color:'#ff2800'},
+  {name:'MySQL conns',          val:52,     max:60,     unit:'/60',  color:'#ffaa00'},
+  {name:'Judge poll (ms)',       val:12,     max:500,    unit:'ms',   color:'#b8ff00'},
+];
+
+let hintActivity = [
+  {player:'red_0x4f',  level:'h2', sc:'02', time:'14:33:20', text:'Hint level 2 — scenario 02 Slowloris'},
+  {player:'0xc0ffee',  level:'h1', sc:'03', time:'14:31:44', text:'Hint level 1 — scenario 03 ACK Bypass'},
+  {player:'pwner_k',   level:'h3', sc:'08', time:'14:30:18', text:'Hint level 3 — scenario 08 Slow POST'},
+];
+
+// ── Clock ──
+function updateClock(){
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('en-GB',{hour12:false});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── Render targets ──
+function renderTargets(){
+  const el = document.getElementById('targets-list');
+  const okCount = TARGETS.filter(t=>t.status==='ok').length;
+  document.getElementById('target-ok-count').textContent = okCount + ' Online';
+  document.getElementById('target-ok-count').className =
+    'ph-badge ' + (okCount < TARGETS.length ? 'amber' : 'green');
+
+  el.innerHTML = TARGETS.map(t => {
+    const pct = t.status==='down' ? 0 : t.status==='warn' ? 40 : Math.min(100, 100 - (t.response/50));
+    const hasflag = (t.id==='apache-vuln' || t.id==='dns-open');
+    return `<div class="target-row">
+      <div class="tr-head">
+        <div class="tr-dot ${t.status}"></div>
+        <span class="tr-name">${t.id}</span>
+        ${hasflag ? '<span class="tr-flag">FLAG ACTIVE</span>' : ''}
+      </div>
+      <div class="tr-ip">${t.ip} — ${t.service}</div>
+      <div class="tr-bar"><div class="tr-bar-fill ${t.status}" style="width:${pct}%"></div></div>
+      <div class="tr-stats">
+        <span>${t.status==='down' ? 'DOWN' : t.status==='warn' ? t.response+'ms' : t.response+'ms'}</span>
+        <span>${t.uptime}% up</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render scoreboard ──
+function renderScoreboard(){
+  const el = document.getElementById('scoreboard');
+  const maxPts = PLAYERS[0].pts;
+  const ranks = ['gold','silver','bronze'];
+  el.innerHTML = PLAYERS.map((p,i) => `
+    <div class="score-row">
+      <span class="sr-rank ${ranks[i]||''}">${i+1}</span>
+      <div class="sr-info">
+        <div class="sr-name">${p.name}</div>
+        <div class="sr-solves">${p.solves.length} solved — ${p.solves.join(' ')}</div>
+        <div class="sr-bar"><div class="sr-bar-fill" style="width:${(p.pts/maxPts*100).toFixed(0)}%"></div></div>
+      </div>
+      <span class="sr-pts">${p.pts}</span>
+    </div>
+  `).join('');
+  document.getElementById('sb-players').textContent = 'Players: ' + PLAYERS.length;
+}
+
+// ── Render KPIs ──
+function renderKPIs(){
+  const totalSolves = SCENARIOS.reduce((a,s)=>a+s.solvers,0);
+  const flagsIssued = SCENARIOS.filter(s=>s.status!=='idle').length;
+  const kpis = [
+    {val: PLAYERS.reduce((a,p)=>a+p.pts,0), label:'Total Points', color:'lime', delta:'+100 last solve'},
+    {val: totalSolves, label:'Total Solves', color:'green', delta:'+1 last 5min'},
+    {val: TARGETS.filter(t=>t.status==='down').length, label:'Services Down', color:'red', delta:'↑ +1'},
+    {val: flagsIssued, label:'Flags Issued', color:'amber', delta:'5min window'},
+    {val: PLAYERS.length, label:'Active Players', color:'white', delta:'in arena'},
+  ];
+  document.getElementById('kpi-row').innerHTML = kpis.map(k=>`
+    <div class="kpi">
+      <span class="kpi-val ${k.color}">${k.val}</span>
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-delta">${k.delta}</div>
+    </div>
+  `).join('');
+  document.getElementById('sb-flags').textContent = 'Flags issued: '+flagsIssued;
+}
+
+// ── Render scenario grid ──
+function renderScenarios(){
+  const active = SCENARIOS.filter(s=>s.status==='active').length;
+  document.getElementById('sc-active').textContent = active + ' Active';
+  document.getElementById('sc-grid').innerHTML = SCENARIOS.map(s=>`
+    <div class="sc-tile ${s.status}">
+      <span class="sct-pts">${s.pts}</span>
+      <div class="sct-id">${s.id}</div>
+      <div class="sct-name">${s.name}</div>
+      <div class="sct-status">${
+        s.status==='done'   ? '✓ '+s.solvers+' solved' :
+        s.status==='active' ? '● Active' : '— Idle'
+      }</div>
+    </div>
+  `).join('');
+}
+
+// ── Render feed ──
+function renderFeed(){
+  const el = document.getElementById('feed');
+  el.innerHTML = feedEvents.map(e=>`
+    <div class="feed-row">
+      <span class="fr-time">${e.time}</span>
+      <span class="fr-player">${e.player}</span>
+      <span class="fr-event">${e.event}</span>
+      <span class="fr-pts ${e.pts>0?'pos':'neg'}">${e.pts>0?'+':''}${e.pts}</span>
+    </div>
+  `).join('');
+}
+
+// ── Render judge log ──
+function renderJudgeLog(){
+  const el = document.getElementById('judge-log');
+  const header = el.querySelector('.jl-header');
+  // Remove old lines
+  el.querySelectorAll('.jl-line').forEach(l=>l.remove());
+  judgeLog.forEach(entry=>{
+    const line = document.createElement('div');
+    line.className = 'jl-line';
+    const status = entry.result==='down'
+      ? `<span class="jl-dn">CONNECTION REFUSED</span>${entry.flag?` <span class="jl-fl">→ FLAG ISSUED sc.${entry.sc}</span>`:''}`
+      : entry.result==='warn'
+      ? `<span class="jl-dn">${entry.ms}ms (DEGRADED)</span>`
+      : `<span class="jl-ok">${entry.ms}ms OK</span>`;
+    line.innerHTML = `<span class="jl-t">[${entry.t}]</span> <span class="jl-nf">probe ${entry.target}:  </span>${status}`;
+    el.appendChild(line);
+  });
+  el.scrollTop = el.scrollHeight;
+}
+
+// ── Render metrics ──
+function renderMetrics(){
+  document.getElementById('metrics').innerHTML = attackMetrics.map(m=>{
+    const pct = Math.min(100,(m.val/m.max)*100);
+    const display = m.unit==='pps'  ? (m.val/1000).toFixed(0)+'k'
+                  : m.unit==='Mbps' ? m.val.toFixed(1)
+                  : m.val;
+    return `<div class="metric-row">
+      <div class="mr-head">
+        <span class="mr-name">${m.name}</span>
+        <span class="mr-val">${display} <span style="font-size:11px;color:var(--off)">${m.unit}</span></span>
+      </div>
+      <div class="mr-bar">
+        <div class="mr-fill" style="width:${pct}%;background:${m.color}"></div>
+      </div>
+      <div class="mr-sub">${pct.toFixed(0)}% of max</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render hints ──
+function renderHints(){
+  document.getElementById('hint-count').textContent = hintActivity.length + ' Used';
+  document.getElementById('hints-pane').innerHTML =
+    '<div class="alert"><div class="alert-title"><span class="green">✓</span> Flag Active — SC 01</div><div class="alert-body">apache-vuln confirmed down. Flag DOSARENA{01_a3f9c2...} valid for 4:12 remaining.</div></div>' +
+    '<div class="alert red"><div class="alert-title"><span class="red-t">↑</span> TCP Starvation Detected</div><div class="alert-body">mysql-vuln: 52/50 connections. Judge confirmed scenario 07 degraded.</div></div>' +
+    hintActivity.map(h=>`
+      <div class="hint-row">
+        <span class="hr-badge ${h.level}">${h.level.toUpperCase()}</span>
+        <div class="hr-body">
+          <div class="hr-player">${h.player}</div>
+          <div class="hr-text">${h.text}</div>
+          <div class="hr-time">${h.time}</div>
+        </div>
+      </div>
+    `).join('');
+}
+
+// ── Initial render ──
+renderTargets();
+renderScoreboard();
+renderKPIs();
+renderScenarios();
+renderFeed();
+renderJudgeLog();
+renderMetrics();
+renderHints();
+
+// ── Live simulation ──
+const names = ['red_0x4f','n0ise','v01d_ptr','pwner_k','0xc0ffee','pkt_str0m'];
+const events = [
+  'probe attempt on apache-vuln',
+  'hint sc 05 lvl 1 used',
+  'flag <span class="ok">CONFIRMED</span> sc 05',
+  'submit attempt sc 03',
+  'hint sc 06 lvl 2 used',
+  'solved <span class="sc">ACK Bypass</span>',
+];
+
+function addFeedEvent(){
+  const now = new Date();
+  const t = now.toLocaleTimeString('en-GB',{hour12:false});
+  const p = names[Math.floor(Math.random()*names.length)];
+  const ev = events[Math.floor(Math.random()*events.length)];
+  const pts = ev.includes('solved') ? 150 : ev.includes('confirmed') ? 100 : ev.includes('hint') ? -25 : 0;
+  feedEvents.unshift({time:t, player:p, event:ev, pts:pts||0, type:'auto'});
+  if(feedEvents.length > 30) feedEvents.pop();
+  renderFeed();
+}
+
+function addJudgeEntry(){
+  const now = new Date();
+  const t = now.toLocaleTimeString('en-GB',{hour12:false});
+  const targets = TARGETS.map(t=>t.id);
+  const target = targets[Math.floor(Math.random()*targets.length)];
+  const tData = TARGETS.find(t=>t.id===target);
+  judgeLog.unshift({
+    t, target,
+    result: tData.status,
+    ms: tData.status==='down' ? 0 : tData.status==='warn' ? 2800 : Math.floor(Math.random()*20)+5
+  });
+  if(judgeLog.length > 20) judgeLog.pop();
+  renderJudgeLog();
+}
+
+function updateMetrics(){
+  attackMetrics[0].val = Math.floor(70000 + Math.random()*60000);
+  attackMetrics[1].val = parseFloat((3 + Math.random()*4).toFixed(1));
+  attackMetrics[2].val = Math.floor(180 + Math.random()*40);
+  attackMetrics[3].val = Math.floor(48 + Math.random()*8);
+  attackMetrics[4].val = Math.floor(8 + Math.random()*20);
+  renderMetrics();
+}
+
+let judgeReachable = false;
+
+async function pollJudge(){
+  try {
+    const r = await fetch(JUDGE_URL + '/status', {signal: AbortSignal.timeout(2000)});
+    if(r.ok){
+      judgeReachable = true;
+      document.getElementById('connect-overlay').style.display = 'none';
+      document.getElementById('judge-btn').textContent = 'Judge: \u25cf Online';
+      document.getElementById('judge-btn').style.color = 'var(--lime)';
+      const data = await r.json();
+      updateFromJudge(data);
+    }
+  } catch {
+    if(!judgeReachable){
+      document.getElementById('connect-overlay').style.display = 'flex';
+    }
+    document.getElementById('judge-btn').textContent = 'Judge: \u25cf Offline';
+    document.getElementById('judge-btn').style.color = 'var(--red)';
+  }
+}
+
+function connectJudge(){
+  const input = document.getElementById('judge-url-input');
+  window.JUDGE_URL = input.value.trim().replace(/\/$/, '');
+  // reload with new URL param
+  const url = new URL(window.location.href);
+  url.searchParams.set('judge', window.JUDGE_URL);
+  window.history.replaceState({}, '', url);
+  judgeReachable = false;
+  pollJudge();
+}
+
+function updateFromJudge(data){
+  // update scoreboard if present
+  if(data.scoreboard && Array.isArray(data.scoreboard)){
+    const sb = document.getElementById('scoreboard');
+    if(sb) {
+      sb.innerHTML = data.scoreboard.slice(0,10).map((p,i) => {
+        const cls = i===0?'gold':i===1?'silver':i===2?'bronze':'';
+        return `<div class="score-row">
+          <div class="sr-rank ${cls}">${i+1}</div>
+          <div class="sr-info">
+            <div class="sr-name">${p.player||p.name}</div>
+            <div class="sr-solves">${p.solves||0} scenario${(p.solves||0)!==1?'s':''} solved</div>
+            <div class="sr-bar"><div class="sr-bar-fill" style="width:${Math.min(100,(p.score||0)/1050*100)}%"></div></div>
+          </div>
+          <div class="sr-pts">${p.score||0}</div>
+        </div>`;
+      }).join('');
+    }
+  }
+  // update KPI flags count
+  if(data.flags_issued !== undefined){
+    const el = document.getElementById('sb-flags');
+    if(el) el.textContent = 'Flags issued: ' + data.flags_issued;
+  }
+}
+
+setInterval(addFeedEvent,   4000 + Math.random()*3000);
+setInterval(addJudgeEntry,  5000);
+setInterval(updateMetrics,  3000);
+// Show connect overlay on load, hide after successful connection
+setTimeout(pollJudge, 500);
+setInterval(pollJudge,      10000);
+setInterval(renderKPIs,     2000);
+</script>
+
+<!-- ── CONNECT OVERLAY ── -->
+<div id="connect-overlay" style="display:none;position:fixed;inset:0;background:rgba(15,15,13,.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:48px;color:#b8ff00;letter-spacing:-2px;margin-bottom:8px">DOSArena</div>
+  <div style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:4px;color:#7a7870;text-transform:uppercase;margin-bottom:40px">Live Dashboard</div>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7a7870;letter-spacing:2px;margin-bottom:16px;text-transform:uppercase">Judge URL</div>
+  <div style="display:flex;gap:0;margin-bottom:32px">
+    <input id="judge-url-input" type="text" value="http://localhost:8888"
+      style="font-family:'JetBrains Mono',monospace;font-size:13px;background:#1f1f1c;border:1px solid #2a2a26;border-right:none;color:#f0ede6;padding:10px 16px;width:320px;outline:none;letter-spacing:1px">
+    <button onclick="connectJudge()"
+      style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;background:#b8ff00;color:#131311;border:none;padding:0 24px;cursor:pointer;transition:background .15s"
+      onmouseover="this.style.background='#d4ff20'" onmouseout="this.style.background='#b8ff00'">Connect</button>
+  </div>
+  <p style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#3a3a36;letter-spacing:1px;max-width:420px;text-align:center;line-height:1.8">
+    Start the lab with <span style="color:#b8ff00">make up</span> then connect here.<br>
+    Or pass <span style="color:#b8ff00">?judge=http://10.0.99.30:8888</span> in the URL.
+  </p>
+</div>
+</body>
+</html>

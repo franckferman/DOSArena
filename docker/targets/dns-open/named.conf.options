@@ -1,0 +1,35 @@
+// named.conf.options — INTENTIONALLY VULNERABLE
+// Open resolver: accepts queries from any source
+// Responds to ANY queries (amplification-vulnerable)
+
+options {
+    directory "/var/cache/bind";
+
+    // VULNERABLE: allow recursion from any source
+    recursion yes;
+    allow-recursion { any; };
+    allow-query { any; };
+
+    // VULNERABLE: no rate limiting
+    // rate-limit { responses-per-second 5; }; <- disabled
+
+    // VULNERABLE: responds to ANY type queries
+    // minimal-responses yes; <- disabled (would reduce amp factor)
+
+    dnssec-validation no;
+
+    listen-on { any; };
+    listen-on-v6 { none; };
+};
+
+// Logging for training observation
+logging {
+    channel default_log {
+        file "/var/log/named/named.log" versions 3 size 5m;
+        print-time yes;
+        print-severity yes;
+        print-category yes;
+    };
+    category default { default_log; };
+    category queries { default_log; };
+};

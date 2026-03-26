@@ -1,0 +1,22 @@
+
+  ___   ___  ____    _
+ |   \ / _ \/ ___|  / \   _ __ ___ _ __   __ _
+ | |) | | | \___ \ / _ \ | '__/ _ \ '_ \ / _` |
+ | |/ /| |_| |___) / ___ \| | |  __/ | | | (_| |
+ |___/  \___/|____/_/   \_\_|  \___|_| |_|\__,_|
+
+ DoS/DDoS Training Lab  —  Authorized use only
+ ─────────────────────────────────────────────────────────
+
+ Quick reference:
+   targets     — list all available targets and their IPs
+   scenarios   — list available test scenarios
+   floodles    — Floodles toolkit (floodles --help)
+
+ Network:
+   Attacker    : 10.0.1.10
+   DMZ targets : 10.0.2.x  (vulnerable)
+   Protected   : 10.0.3.x  (hardened)
+   Monitor     : 10.0.2.99
+
+ ─────────────────────────────────────────────────────────
